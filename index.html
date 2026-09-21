@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+  <meta name="referrer" content="no-referrer">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#071018">
+  <meta name="description" content="Vertex Racing">
+  <title>Vertex Racing</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="security.js" defer></script>
+  <script src="game.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span>🏎️</span><div><strong>Vertex Racing</strong><small>Vertex Games</small></div></div>
+    <button id="restartBtn">إعادة</button>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <span>HIGH SPEED</span>
+      <h1>Vertex Racing</h1>
+      <p>بدّل المسارات، تفادى السيارات، وارفع سرعتك لأعلى رقم.</p>
+    </section>
+
+    <section class="game-layout">
+      <aside class="panel">
+        <div><span>النقاط</span><strong id="score">0</strong></div>
+        <div><span>السرعة</span><strong><span id="speed">120</span> km/h</strong></div>
+        <div><span>أفضل نتيجة</span><strong id="best">0</strong></div>
+        <p>← → أو A / D لتغيير المسار.</p>
+      </aside>
+
+      <section class="game-card">
+        <canvas id="gameCanvas" width="720" height="720"></canvas>
+        <div id="overlay" class="overlay show">
+          <div>
+            <span id="overlayIcon">🏁</span>
+            <h2 id="overlayTitle">جاهز للسباق؟</h2>
+            <p id="overlayText">تفادى السيارات وحاول تحطيم رقمك القياسي.</p>
+            <button id="startBtn">ابدأ السباق</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="mobile-controls">
+      <button data-move="left">←</button>
+      <button data-move="right">→</button>
+    </section>
+  </main>
+
+  <footer>Vertex Systems AI © 2026</footer>
+</body>
+</html>
