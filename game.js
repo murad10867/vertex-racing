@@ -686,7 +686,7 @@
     showOverlay(
       '🏁',
       'Vertex Racing: Nitro Rush',
-      'سباق آركيد سريع: نيترو، درفت، قفزات، حركة مرور و9 منافسين حتى خط النهاية.',
+      'سباق آركيد سريع: نيترو، درفت، قفزات و9 منافسين فقط حتى خط النهاية.',
       'ابدأ السباق',
       start
     );
@@ -1021,7 +1021,6 @@
 
     const state=updatePlayer(dt);
     updateWorld(dt);
-    updateTraffic(dt,state.nitroActive);
     updateRamps(dt);
     updateRivals(dt);
     updateEffects(dt,state.drifting,state.nitroActive);
