@@ -572,22 +572,25 @@
   }
 
   function createRivals() {
-    const colors=[0x00c8ff,0xffc23d,0x8e68ff];
-    const lanes=[-5,0,5];
+    const colors=[
+      0x00c8ff,0xffc23d,0x8e68ff,0x45dc82,0xff5f72,
+      0xf4f4f4,0x24d6c8,0xff8b35,0x5068ff
+    ];
+    const lanes=[-6,-3,0,3,6,-6,-3,3,6];
 
     colors.forEach((color,i)=>{
-      const car=makeCar(color,.98);
-      car.position.set(lanes[i],0,-8-i*6);
+      const car=makeCar(color,.96+((i%3)*.01));
+      car.position.set(lanes[i],0,-10-i*12);
       car.rotation.y=0;
       scene.add(car);
 
       rivals.push({
         mesh:car,
-        distance:-25-i*18,
-        speed:246+i*12,
+        distance:-20-i*16,
+        speed:238+(i%5)*8+Math.floor(i/5)*3,
         lane:lanes[i],
         targetLane:lanes[i],
-        changeTimer:2+i
+        changeTimer:1.6+(i%4)*.6
       });
     });
   }
@@ -623,21 +626,20 @@
     raceText.textContent=Math.floor(progress)+'%';
 
     const ahead=rivals.filter(r=>r.distance>distance).length;
-    positionEl.textContent=(ahead+1)+' / 4';
+    positionEl.textContent=(ahead+1)+' / 10';
   }
 
   function resetRivals() {
-    const starts=[-25,-43,-61];
-    const lanes=[-5,0,5];
+    const lanes=[-6,-3,0,3,6,-6,-3,3,6];
 
     rivals.forEach((r,i)=>{
-      r.distance=starts[i];
-      r.speed=246+i*12;
+      r.distance=-20-i*16;
+      r.speed=238+(i%5)*8+Math.floor(i/5)*3;
       r.lane=lanes[i];
       r.targetLane=lanes[i];
-      r.changeTimer=2+i;
+      r.changeTimer=1.6+(i%4)*.6;
       r.mesh.visible=true;
-      r.mesh.position.set(lanes[i],0,-8-i*6);
+      r.mesh.position.set(lanes[i],0,-10-i*12);
       r.mesh.rotation.set(0,0,0);
     });
   }
@@ -684,7 +686,7 @@
     showOverlay(
       '🏁',
       'Vertex Racing: Nitro Rush',
-      'سباق آركيد سريع: نيترو، درفت، قفزات، حركة مرور و3 منافسين حتى خط النهاية.',
+      'سباق آركيد سريع: نيترو، درفت، قفزات، حركة مرور و9 منافسين حتى خط النهاية.',
       'ابدأ السباق',
       start
     );
@@ -715,7 +717,7 @@
     if(finalScore>old) localStorage.setItem('vertexRacingBestNitro',String(finalScore));
     best();
 
-    const placeText=place===1?'الأول 🏆':place===2?'الثاني 🥈':place===3?'الثالث 🥉':'الرابع';
+    const placeText=place===1?'الأول 🏆':place===2?'الثاني 🥈':place===3?'الثالث 🥉':'المركز '+place;
 
     showOverlay(
       place===1?'🏆':'🏁',
