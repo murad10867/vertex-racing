@@ -94,7 +94,10 @@ func _material(color: Color, metallic := 0.0, roughness := 0.7) -> StandardMater
 	return mat
 
 
-func _box(size: Vector3, color: Color, pos: Vector3, parent: Node = self, metallic := 0.0, roughness := 0.75) -> MeshInstance3D:
+func _box(size: Vector3, color: Color, pos: Vector3, parent: Node = null, metallic := 0.0, roughness := 0.75) -> MeshInstance3D:
+	if parent == null:
+		parent = self
+
 	var mesh := BoxMesh.new()
 	mesh.size = size
 
@@ -135,7 +138,7 @@ func _build_track() -> void:
 			)
 
 	for z in range(0, int(TRACK_LENGTH) + 120, 7):
-		var curb_color := Color8(230, 45, 60) if (z / 7) % 2 == 0 else Color8(242, 242, 242)
+		var curb_color := Color8(230, 45, 60) if int(z / 7) % 2 == 0 else Color8(242, 242, 242)
 		_box(
 			Vector3(0.65, 0.1, 6.7),
 			curb_color,
@@ -461,11 +464,15 @@ func _physics_process(delta: float) -> void:
 	if collision_cooldown > 0.0:
 		collision_cooldown -= delta
 
-	var throttle := Input.is_action_pressed("accelerate")
-	var braking := Input.is_action_pressed("brake")
-	var steer := Input.get_axis("steer_left", "steer_right")
-	var drifting := Input.is_action_pressed("drift") and abs(steer) > 0.05 and speed > 28.0
-	var nitro_active := Input.is_action_pressed("nitro") and nitro > 0.0 and speed > 10.0 and not drifting
+	var throttle := Input.is_physical_key_pressed(KEY_W) or Input.is_key_pressed(KEY_UP)
+	var braking := Input.is_physical_key_pressed(KEY_S) or Input.is_key_pressed(KEY_DOWN)
+	var left_pressed := Input.is_physical_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT)
+	var right_pressed := Input.is_physical_key_pressed(KEY_D) or Input.is_key_pressed(KEY_RIGHT)
+	var steer := (-1.0 if left_pressed else 0.0) + (1.0 if right_pressed else 0.0)
+	var drift_pressed := Input.is_key_pressed(KEY_SHIFT)
+	var nitro_pressed := Input.is_key_pressed(KEY_SPACE)
+	var drifting := drift_pressed and abs(steer) > 0.05 and speed > 28.0
+	var nitro_active := nitro_pressed and nitro > 0.0 and speed > 10.0 and not drifting
 
 	if throttle:
 		speed += 24.0 * delta
