@@ -81,3 +81,112 @@ footer{text-align:center;color:#60707b;padding:0 15px 28px;font-weight:700}
 .race-track i{
   background:linear-gradient(90deg,#ffd34a,#ff754a,#ff3e72);
 }
+
+
+/* Career, garage and map shop */
+.shop-actions{
+  display:grid!important;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+  padding-top:12px!important;
+}
+.shop-actions button{
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:10px;
+  padding:9px 6px;
+  background:#152536;
+  font-size:11px;
+  font-weight:900;
+}
+.shop-actions button:hover{filter:brightness(1.14)}
+.store-overlay{
+  position:fixed;
+  inset:0;
+  z-index:100;
+  display:grid;
+  place-items:center;
+  padding:18px;
+  background:rgba(2,5,9,.82);
+  backdrop-filter:blur(10px);
+  opacity:0;
+  visibility:hidden;
+  transition:.18s ease;
+}
+.store-overlay.show{opacity:1;visibility:visible}
+.store-modal{
+  position:relative;
+  width:min(860px,100%);
+  max-height:min(760px,90vh);
+  overflow:auto;
+  padding:22px;
+  border-radius:20px;
+  border:1px solid rgba(255,211,74,.24);
+  background:linear-gradient(145deg,#0b1522,#12283c);
+  box-shadow:0 30px 100px rgba(0,0,0,.55);
+}
+.store-close{
+  position:absolute;
+  top:12px;
+  left:12px;
+  width:38px;
+  height:38px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:50%;
+  background:#172536;
+}
+.store-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:15px;
+  padding:5px 45px 18px 0;
+}
+.store-head span{font-size:10px;letter-spacing:2px;color:#ffd34a;font-weight:900}
+.store-head h2{margin:5px 0 0;font-size:28px}
+.store-head>strong{font-size:20px}
+.store-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+.store-card{
+  padding:15px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:16px;
+  background:rgba(255,255,255,.045);
+}
+.store-card.selected{border-color:#ffd34a;box-shadow:0 0 0 1px rgba(255,211,74,.18)}
+.store-card h3{margin:0 0 5px;font-size:18px}
+.store-card p{margin:5px 0;color:#9eb1bf;font-size:12px;line-height:1.6}
+.store-card .swatch{
+  width:100%;
+  height:7px;
+  border-radius:999px;
+  margin:10px 0;
+}
+.store-card .stats{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:5px;
+  margin:10px 0;
+}
+.store-card .stats span{
+  padding:7px 5px;
+  border-radius:8px;
+  background:rgba(255,255,255,.05);
+  text-align:center;
+  font-size:10px;
+}
+.store-card button{
+  width:100%;
+  padding:10px;
+  border:0;
+  border-radius:10px;
+  background:linear-gradient(135deg,#ff4b55,#ff9a3d);
+  font-weight:900;
+}
+.store-card button[disabled]{opacity:.45;cursor:not-allowed}
+@media(max-width:620px){
+  .store-grid{grid-template-columns:1fr}
+  .store-modal{padding:16px}
+}
