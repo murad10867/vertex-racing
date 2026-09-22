@@ -4,43 +4,66 @@
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
   <meta name="referrer" content="no-referrer">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
   <meta name="theme-color" content="#071018">
-  <meta name="description" content="Vertex Racing 3D">
-  <title>Vertex Racing 3D</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="Vertex Racing Nitro Rush - سباق آركيد 3D سريع">
+  <title>Vertex Racing: Nitro Rush</title>
+  <link rel="stylesheet" href="style.css?v=20260922-nitro">
   <script src="security.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" defer></script>
-  <script src="game.js?v=20260922-racing3d" defer></script>
+  <script src="game.js?v=20260922-nitro" defer></script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span>🏎️</span><div><strong>Vertex Racing 3D</strong><small>Vertex Games</small></div></div>
+    <div class="brand"><span>🏎️</span><div><strong>Vertex Racing: Nitro Rush</strong><small>Vertex Games</small></div></div>
     <button id="restartBtn">إعادة</button>
   </header>
 
   <main class="page">
     <section class="hero">
-      <span>HIGH SPEED</span>
-      <h1>Vertex Racing 3D</h1>
-      <p>سباق 3D حقيقي: سرّع، فرمل، لف، وتفادى السيارات على الطريق.</p>
+      <span>ARCADE RACING 3D</span>
+      <h1>Vertex Racing: Nitro Rush</h1>
+      <p>نيترو، درفت، قفزات، منافسين وحركة مرور في سباق سريع ثلاثي الأبعاد.</p>
     </section>
 
     <section class="game-layout">
       <aside class="panel">
-        <div><span>النقاط</span><strong id="score">0</strong></div>
+        <div><span>المركز</span><strong id="position">1 / 4</strong></div>
         <div><span>السرعة</span><strong><span id="speed">0</span> km/h</strong></div>
+        <div><span>النقاط</span><strong id="score">0</strong></div>
         <div><span>أفضل نتيجة</span><strong id="best">0</strong></div>
-        <p>W / ↑ للتسارع، S / ↓ للفرامل، و A D أو ← → للتوجيه.</p>
+
+        <div class="nitro-block">
+          <span>النيترو</span>
+          <div class="nitro-track"><i id="nitroFill"></i></div>
+          <strong id="nitroText">100%</strong>
+        </div>
+
+        <div class="progress-block">
+          <span>تقدم السباق</span>
+          <div class="race-track"><i id="raceFill"></i></div>
+          <strong id="raceText">0%</strong>
+        </div>
+
+        <p>
+          W / ↑ تسارع • S / ↓ فرامل • A D توجيه •
+          <b>Space</b> نيترو • <b>Shift</b> درفت.
+        </p>
       </aside>
 
-      <section class="game-card">
+      <section class="game-card" id="gameCard">
         <canvas id="gameCanvas" width="960" height="600"></canvas>
+
+        <div class="race-hud">
+          <div id="combo" class="combo"></div>
+          <div id="airText" class="air-text"></div>
+        </div>
+
         <div id="overlay" class="overlay show">
           <div>
             <span id="overlayIcon">🏁</span>
             <h2 id="overlayTitle">جاهز للسباق؟</h2>
-            <p id="overlayText">قد بأقصى سرعة، لف بحرية، وتفادى السيارات.</p>
+            <p id="overlayText">تجاوز المنافسين، استخدم النيترو، اعمل درفت واقفز من الرامبات حتى خط النهاية.</p>
             <button id="startBtn">ابدأ السباق</button>
           </div>
         </div>
@@ -48,11 +71,15 @@
     </section>
 
     <section class="mobile-controls">
-      <button data-key="ArrowUp">↑</button>
-      <div>
+      <div class="mobile-main">
         <button data-key="ArrowLeft">←</button>
-        <button data-key="ArrowDown">↓</button>
+        <button data-key="ArrowUp">↑</button>
         <button data-key="ArrowRight">→</button>
+      </div>
+      <div class="mobile-actions">
+        <button data-key="ShiftLeft" class="drift">DRIFT</button>
+        <button data-key="ArrowDown">↓</button>
+        <button data-key="Space" class="nitro">NITRO</button>
       </div>
     </section>
   </main>
