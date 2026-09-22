@@ -64,6 +64,11 @@
   const rivals = [];
   const ramps = [];
   const streaks = [];
+  const smokeParticles = [];
+  const sparkParticles = [];
+  const neonProps = [];
+
+  let nitroLight;
 
   let playerCar;
   let running = false;
@@ -185,6 +190,20 @@
       g.add(tail);
     });
 
+    const headlightMat = new THREE.MeshBasicMaterial({ color:0xf3fbff });
+    [-1.08,1.08].forEach(x => {
+      const lamp = new THREE.Mesh(new THREE.BoxGeometry(.72,.20,.12), headlightMat);
+      lamp.position.set(x,1.18,-3.29);
+      g.add(lamp);
+    });
+
+    const diffuser = new THREE.Mesh(
+      new THREE.BoxGeometry(2.45,.18,.26),
+      new THREE.MeshStandardMaterial({ color:0x151a20,roughness:.38,metalness:.55 })
+    );
+    diffuser.position.set(0,.72,3.28);
+    g.add(diffuser);
+
     const flameMat = new THREE.MeshBasicMaterial({
       color: 0x42dcff,
       transparent: true,
@@ -242,6 +261,19 @@
       group.add(edge);
     });
 
+    const curbRed = new THREE.MeshBasicMaterial({ color:0xd92f3b });
+    const curbWhite = new THREE.MeshBasicMaterial({ color:0xf1f2f2 });
+    for (let d=-18; d<=18; d+=4) {
+      [-ROAD_HALF-.12,ROAD_HALF+.12].forEach(x => {
+        const curb = new THREE.Mesh(
+          new THREE.BoxGeometry(.55,.08,3.6),
+          ((d/4)%2===0 ? curbRed : curbWhite)
+        );
+        curb.position.set(x,.18,d);
+        group.add(curb);
+      });
+    }
+
     [-ROAD_WIDTH/6, ROAD_WIDTH/6].forEach(laneX => {
       for (let d=-16; d<=16; d+=8) {
         const dash = new THREE.Mesh(new THREE.BoxGeometry(.15,.04,4), lineMat);
@@ -286,8 +318,8 @@
       new THREE.MeshStandardMaterial({color:0x555d70,roughness:.86})
     ];
 
-    for (let i=0; i<56; i++) {
-      const z = -20 - i*12;
+    for (let i=0; i<72; i++) {
+      const z = -20 - i*9.5;
       const side = i%2===0 ? -1 : 1;
       const x = side * (17 + (i%5)*4.2);
 
@@ -336,13 +368,40 @@
       scene.add(m);
     }
 
-    const signMat = new THREE.MeshBasicMaterial({color:0x13e8ff});
-    for(let i=0;i<8;i++){
-      const sign=new THREE.Mesh(new THREE.BoxGeometry(7,.18,2),signMat);
+    const neonColors=[0x13e8ff,0xff315d,0xa85cff];
+    for(let i=0;i<12;i++){
+      const signMat = new THREE.MeshBasicMaterial({
+        color:neonColors[i%neonColors.length],
+        transparent:true,
+        opacity:.92
+      });
+      const sign=new THREE.Mesh(new THREE.BoxGeometry(6.5,.16,1.9),signMat);
       sign.rotation.x=-Math.PI/2;
-      sign.position.set((i%2===0?-1:1)*15,5,-70-i*80);
+      sign.position.set((i%2===0?-1:1)*(15+(i%3)*2.5),5.3,-55-i*54);
       scene.add(sign);
       scenery.push({mesh:sign,wrap:680});
+      neonProps.push(sign);
+    }
+
+    const poleMat=new THREE.MeshStandardMaterial({color:0x333b43,roughness:.48,metalness:.62});
+    const bulbMat=new THREE.MeshBasicMaterial({color:0xe7f6ff});
+    for(let i=0;i<34;i++){
+      const z=-18-i*19;
+      [-14.2,14.2].forEach((x,sideIndex)=>{
+        const lamp=new THREE.Group();
+        const pole=new THREE.Mesh(new THREE.CylinderGeometry(.08,.1,5.5,8),poleMat);
+        pole.position.y=2.75;
+        lamp.add(pole);
+        const arm=new THREE.Mesh(new THREE.BoxGeometry(1.5,.08,.08),poleMat);
+        arm.position.set(sideIndex===0?.7:-.7,5.2,0);
+        lamp.add(arm);
+        const bulb=new THREE.Mesh(new THREE.BoxGeometry(.48,.12,.28),bulbMat);
+        bulb.position.set(sideIndex===0?1.35:-1.35,5.14,0);
+        lamp.add(bulb);
+        lamp.position.set(x,0,z);
+        scene.add(lamp);
+        scenery.push({mesh:lamp,wrap:680});
+      });
     }
   }
 
@@ -363,6 +422,107 @@
       s.visible=false;
       scene.add(s);
       streaks.push(s);
+    }
+  }
+
+  function initEffects() {
+    const smokeMat = new THREE.MeshBasicMaterial({
+      color:0xd7dbe0,
+      transparent:true,
+      opacity:0,
+      depthWrite:false
+    });
+    for(let i=0;i<28;i++){
+      const p=new THREE.Mesh(new THREE.SphereGeometry(.28,7,5),smokeMat.clone());
+      p.visible=false;
+      scene.add(p);
+      smokeParticles.push({mesh:p,life:0,vx:0,vz:0,scale:1});
+    }
+
+    const sparkMat = new THREE.MeshBasicMaterial({
+      color:0xffc04b,
+      transparent:true,
+      opacity:0,
+      depthWrite:false
+    });
+    for(let i=0;i<36;i++){
+      const p=new THREE.Mesh(new THREE.BoxGeometry(.05,.05,.45),sparkMat.clone());
+      p.visible=false;
+      scene.add(p);
+      sparkParticles.push({mesh:p,life:0,vx:0,vy:0,vz:0});
+    }
+
+    nitroLight=new THREE.PointLight(0x21dfff,0,10);
+    nitroLight.position.set(0,.9,3.9);
+    playerCar.add(nitroLight);
+  }
+
+  function emitSmoke() {
+    const p=smokeParticles.find(s=>s.life<=0);
+    if(!p) return;
+
+    const side=Math.random()>.5?-1:1;
+    p.life=.55+Math.random()*.35;
+    p.vx=(Math.random()-.5)*1.4;
+    p.vz=2.2+Math.random()*2.4;
+    p.scale=.75+Math.random()*.65;
+    p.mesh.position.set(
+      playerCar.position.x+side*1.45,
+      .45+jumpY,
+      PLAYER_Z+2.3+Math.random()*.7
+    );
+    p.mesh.scale.setScalar(p.scale);
+    p.mesh.material.opacity=.34;
+    p.mesh.visible=true;
+  }
+
+  function burstSparks(x,z,count=10) {
+    let emitted=0;
+    for(const p of sparkParticles){
+      if(p.life>0) continue;
+      p.life=.28+Math.random()*.3;
+      p.vx=(Math.random()-.5)*13;
+      p.vy=2+Math.random()*7;
+      p.vz=(Math.random()-.5)*10;
+      p.mesh.position.set(x,.75+jumpY,z);
+      p.mesh.rotation.z=Math.random()*Math.PI;
+      p.mesh.material.opacity=1;
+      p.mesh.visible=true;
+      emitted++;
+      if(emitted>=count) break;
+    }
+  }
+
+  function updateEffects(dt,drifting,nitroActive) {
+    if(drifting && speed>110 && Math.random()<dt*22) emitSmoke();
+
+    smokeParticles.forEach(p=>{
+      if(p.life<=0) return;
+      p.life-=dt;
+      p.mesh.position.x+=p.vx*dt;
+      p.mesh.position.z+=p.vz*dt;
+      p.mesh.position.y+=.45*dt;
+      const grow=1+dt*1.8;
+      p.mesh.scale.multiplyScalar(grow);
+      p.mesh.material.opacity=Math.max(0,p.life*.42);
+      if(p.life<=0) p.mesh.visible=false;
+    });
+
+    sparkParticles.forEach(p=>{
+      if(p.life<=0) return;
+      p.life-=dt;
+      p.vy-=14*dt;
+      p.mesh.position.x+=p.vx*dt;
+      p.mesh.position.y+=p.vy*dt;
+      p.mesh.position.z+=p.vz*dt;
+      p.mesh.material.opacity=Math.max(0,p.life*2.4);
+      if(p.mesh.position.y<.05) p.mesh.position.y=.05;
+      if(p.life<=0) p.mesh.visible=false;
+    });
+
+    if(nitroLight){
+      nitroLight.intensity=nitroActive ? 3.2 : 0;
+      nitroLight.distance=nitroActive ? 12 : 0;
     }
   }
 
@@ -583,12 +743,14 @@
       t.speed=30;
       score+=240;
       nitro=Math.min(100,nitro+10);
+      burstSparks((playerCar.position.x+t.mesh.position.x)/2,PLAYER_Z,18);
       setCombo('KNOCKDOWN +240');
     }else{
       speed*=.48;
       nitro=Math.max(0,nitro-20);
       score=Math.max(0,score-120);
       steerVisual+=(playerCar.position.x<t.mesh.position.x?-.28:.28);
+      burstSparks((playerCar.position.x+t.mesh.position.x)/2,PLAYER_Z,14);
       setCombo('CRASH -120');
     }
 
@@ -821,6 +983,7 @@
           speed*=.72;
           score=Math.max(0,score-80);
           crashCooldown=.65;
+          burstSparks((playerCar.position.x+r.mesh.position.x)/2,PLAYER_Z,10);
           setCombo('CONTACT');
         }
       }
@@ -833,11 +996,11 @@
     camera.position.y=7.15+speed/205+jumpY*.36;
     camera.position.z=18.2+jumpY*.28;
 
-    const desiredFov=nitroActive?73:(drifting?67:62);
+    const desiredFov=nitroActive?78:(drifting?69:62);
     camera.fov+=(desiredFov-camera.fov)*Math.min(1,dt*6);
     camera.updateProjectionMatrix();
 
-    const shake=nitroActive?.055:0;
+    const shake=nitroActive?.09:(drifting?.035:0);
     camera.position.x+=(Math.random()-.5)*shake;
     camera.position.y+=(Math.random()-.5)*shake;
 
@@ -859,6 +1022,7 @@
     updateTraffic(dt,state.nitroActive);
     updateRamps(dt);
     updateRivals(dt);
+    updateEffects(dt,state.drifting,state.nitroActive);
     updateCamera(dt,state.nitroActive,state.drifting);
     updateHud();
 
@@ -913,6 +1077,7 @@
   playerCar.position.set(0,0,PLAYER_Z);
   scene.add(playerCar);
 
+  initEffects();
   createRivals();
   best();
   reset();
