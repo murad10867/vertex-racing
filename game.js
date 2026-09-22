@@ -147,6 +147,103 @@
   let crashCooldown = 0;
   let raceFinished = false;
 
+  // Engine audio is generated with Web Audio so the game needs no sound files.
+  let audioCtx=null;
+  let engineGain=null;
+  let engineOscLow=null;
+  let engineOscHigh=null;
+  let engineFilter=null;
+  let rivalGain=null;
+  let rivalOsc=null;
+  let rivalFilter=null;
+
+  function ensureEngineAudio(){
+    if(!audioCtx){
+      const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+      if(!AudioContextClass) return;
+
+      audioCtx=new AudioContextClass();
+
+      const master=audioCtx.createGain();
+      master.gain.value=.55;
+      master.connect(audioCtx.destination);
+
+      engineGain=audioCtx.createGain();
+      engineGain.gain.value=.0001;
+      engineFilter=audioCtx.createBiquadFilter();
+      engineFilter.type='lowpass';
+      engineFilter.frequency.value=900;
+
+      engineOscLow=audioCtx.createOscillator();
+      engineOscLow.type='sawtooth';
+      engineOscLow.frequency.value=55;
+
+      engineOscHigh=audioCtx.createOscillator();
+      engineOscHigh.type='triangle';
+      engineOscHigh.frequency.value=110;
+
+      engineOscLow.connect(engineFilter);
+      engineOscHigh.connect(engineFilter);
+      engineFilter.connect(engineGain);
+      engineGain.connect(master);
+
+      rivalGain=audioCtx.createGain();
+      rivalGain.gain.value=.0001;
+      rivalFilter=audioCtx.createBiquadFilter();
+      rivalFilter.type='lowpass';
+      rivalFilter.frequency.value=650;
+
+      rivalOsc=audioCtx.createOscillator();
+      rivalOsc.type='sawtooth';
+      rivalOsc.frequency.value=72;
+      rivalOsc.connect(rivalFilter);
+      rivalFilter.connect(rivalGain);
+      rivalGain.connect(master);
+
+      engineOscLow.start();
+      engineOscHigh.start();
+      rivalOsc.start();
+    }
+
+    if(audioCtx.state==='suspended') audioCtx.resume();
+  }
+
+  function updateEngineAudio(nitroActive=false){
+    if(!audioCtx||!engineGain) return;
+
+    const now=audioCtx.currentTime;
+    const speedRatio=THREE.MathUtils.clamp(speed/400,0,1);
+    const rpm=48+speedRatio*165+(nitroActive?24:0);
+
+    engineOscLow.frequency.setTargetAtTime(rpm,now,.045);
+    engineOscHigh.frequency.setTargetAtTime(rpm*2.03,now,.045);
+    engineFilter.frequency.setTargetAtTime(520+speedRatio*1050,now,.07);
+    engineGain.gain.setTargetAtTime(running?.035+speedRatio*.075:.0001,now,.08);
+
+    const nearby=rivals
+      .filter(r=>r.mesh.visible)
+      .map(r=>Math.abs(r.mesh.position.z-PLAYER_Z))
+      .filter(d=>d<42);
+
+    if(nearby.length){
+      const nearest=Math.min(...nearby);
+      const proximity=1-THREE.MathUtils.clamp(nearest/42,0,1);
+      const avgSpeed=rivals.reduce((sum,r)=>sum+r.speed,0)/Math.max(1,rivals.length);
+      rivalOsc.frequency.setTargetAtTime(55+avgSpeed*.24,now,.09);
+      rivalFilter.frequency.setTargetAtTime(420+proximity*700,now,.1);
+      rivalGain.gain.setTargetAtTime(.006+proximity*.035,now,.1);
+    }else{
+      rivalGain.gain.setTargetAtTime(.0001,now,.12);
+    }
+  }
+
+  function quietEngineAudio(){
+    if(!audioCtx) return;
+    const now=audioCtx.currentTime;
+    if(engineGain) engineGain.gain.setTargetAtTime(.0001,now,.06);
+    if(rivalGain) rivalGain.gain.setTargetAtTime(.0001,now,.06);
+  }
+
   function makeCar(color, scale = 1) {
     const g = new THREE.Group();
 
@@ -927,6 +1024,7 @@
 
   function reset(){
     running=false;
+    quietEngineAudio();
     raceFinished=false;
     score=0;
     speed=0;
@@ -970,6 +1068,7 @@
   }
 
   function start(){
+    ensureEngineAudio();
     overlay.classList.remove('show');
     running=true;
     raceFinished=false;
@@ -981,6 +1080,7 @@
     if(raceFinished) return;
     raceFinished=true;
     running=false;
+    quietEngineAudio();
 
     const ahead=rivals.filter(r=>r.distance>distance).length;
     const place=ahead+1;
@@ -1347,6 +1447,7 @@
     }
 
     const state=updatePlayer(dt);
+    updateEngineAudio(state.nitroActive);
     updateWorld(dt);
     updateObstacles(dt);
     updateRivals(dt);
