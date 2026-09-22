@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="theme-color" content="#11160f">
+  <meta name="description" content="Vertex Tank Simulator - محاكي دبابات ثلاثي الأبعاد">
+  <title>Vertex Tank Simulator</title>
+  <link rel="stylesheet" href="style.css?v=1">
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" defer></script>
+  <script src="game.js?v=1" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span>🛡️</span><div><strong>Vertex Tank Simulator</strong><small>Vertex Games</small></div></div>
+    <button id="restartBtn" type="button">إعادة</button>
+  </header>
+
+  <main class="page">
+    <section class="hero">
+      <span>3D TANK SIMULATOR</span>
+      <h1>Vertex Tank Simulator</h1>
+      <p>قد دبابتك، وجّه البرج، وأطلق على أهداف التدريب داخل ميدان ثلاثي الأبعاد.</p>
+    </section>
+
+    <section class="game-layout">
+      <aside class="panel">
+        <div><span>الصحة</span><strong><span id="health">100</span>%</strong></div>
+        <div><span>الذخيرة</span><strong id="ammo">20</strong></div>
+        <div><span>الأهداف</span><strong><span id="kills">0</span> / 8</strong></div>
+        <div><span>النقاط</span><strong id="score">0</strong></div>
+        <div><span>السرعة</span><strong><span id="speed">0</span> km/h</strong></div>
+        <div class="controls-help">
+          <p>
+            W/S أو ↑/↓ للحركة<br>
+            A/D أو ←/→ للدوران<br>
+            Q/E تدوير البرج<br>
+            Space إطلاق<br>
+            R إعادة تعبئة
+          </p>
+        </div>
+      </aside>
+
+      <section class="game-card">
+        <canvas id="gameCanvas" width="960" height="600"></canvas>
+        <div id="crosshair">+</div>
+        <div id="message" class="message"></div>
+        <div id="overlay" class="overlay show">
+          <div>
+            <span>🛡️</span>
+            <h2>جاهز للميدان؟</h2>
+            <p>دمّر 8 أهداف تدريبية وحافظ على دبابتك.</p>
+            <button id="startBtn" type="button">ابدأ المحاكاة</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="mobile-controls">
+      <div class="move-pad">
+        <button data-key="ArrowUp">▲</button>
+        <div>
+          <button data-key="ArrowLeft">◀</button>
+          <button data-key="ArrowDown">▼</button>
+          <button data-key="ArrowRight">▶</button>
+        </div>
+      </div>
+      <div class="action-pad">
+        <button data-key="KeyQ">برج ◀</button>
+        <button id="fireBtn" class="fire">إطلاق</button>
+        <button data-key="KeyE">برج ▶</button>
+        <button id="reloadBtn">تعبئة</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>Vertex Systems AI © 2026</footer>
+</body>
+</html>
