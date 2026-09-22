@@ -577,17 +577,20 @@
       0xf4f4f4,0x24d6c8,0xff8b35,0x5068ff
     ];
     const lanes=[-6,-3,0,3,6,-6,-3,3,6];
+    const starts=[18,12,6,-6,-12,-18,-24,-30,-36];
+    const targetSpeeds=[260,264,268,256,272,266,262,270,264];
 
     colors.forEach((color,i)=>{
       const car=makeCar(color,.96+((i%3)*.01));
-      car.position.set(lanes[i],0,-10-i*12);
+      car.position.set(lanes[i],0,PLAYER_Z-starts[i]/2.5);
       car.rotation.y=0;
       scene.add(car);
 
       rivals.push({
         mesh:car,
-        distance:-20-i*16,
-        speed:238+(i%5)*8+Math.floor(i/5)*3,
+        distance:starts[i],
+        speed:0,
+        cruiseSpeed:targetSpeeds[i],
         lane:lanes[i],
         targetLane:lanes[i],
         changeTimer:1.6+(i%4)*.6
@@ -631,15 +634,18 @@
 
   function resetRivals() {
     const lanes=[-6,-3,0,3,6,-6,-3,3,6];
+    const starts=[18,12,6,-6,-12,-18,-24,-30,-36];
+    const targetSpeeds=[260,264,268,256,272,266,262,270,264];
 
     rivals.forEach((r,i)=>{
-      r.distance=-20-i*16;
-      r.speed=238+(i%5)*8+Math.floor(i/5)*3;
+      r.distance=starts[i];
+      r.speed=0;
+      r.cruiseSpeed=targetSpeeds[i];
       r.lane=lanes[i];
       r.targetLane=lanes[i];
       r.changeTimer=1.6+(i%4)*.6;
       r.mesh.visible=true;
-      r.mesh.position.set(lanes[i],0,-10-i*12);
+      r.mesh.position.set(lanes[i],0,PLAYER_Z-starts[i]/2.5);
       r.mesh.rotation.set(0,0,0);
     });
   }
@@ -961,8 +967,20 @@
 
       r.lane+=(r.targetLane-r.lane)*Math.min(1,dt*1.2);
 
-      const targetSpeed=245+i*10+Math.sin(performance.now()*.0013+i)*20;
-      r.speed+=(targetSpeed-r.speed)*Math.min(1,dt*.8);
+      const gap=r.distance-distance;
+      let targetSpeed=r.cruiseSpeed+Math.sin(performance.now()*.0013+i)*8;
+
+      // Keep the grid competitive instead of letting cars disappear far ahead.
+      if(gap>75) targetSpeed-=34;
+      else if(gap>45) targetSpeed-=18;
+      if(gap<-75) targetSpeed+=24;
+      else if(gap<-45) targetSpeed+=12;
+
+      // Rivals accelerate from the start just like the player instead of launching at full speed.
+      const aiAcceleration=92;
+      const maxStep=aiAcceleration*dt;
+      r.speed+=THREE.MathUtils.clamp(targetSpeed-r.speed,-maxStep,maxStep);
+      r.speed=THREE.MathUtils.clamp(r.speed,0,305);
       r.distance+=(r.speed/3.6)*dt;
 
       const rel=r.distance-distance;
