@@ -577,8 +577,8 @@
       0xf4f4f4,0x24d6c8,0xff8b35,0x5068ff
     ];
     const lanes=[-6,-3,0,3,6,-6,-3,3,6];
-    const starts=[18,12,6,-6,-12,-18,-24,-30,-36];
-    const targetSpeeds=[260,264,268,256,272,266,262,270,264];
+    const starts=[18,36,54,72,90,108,126,144,162];
+    const targetSpeeds=[252,266,258,270,260,274,256,268,262];
 
     colors.forEach((color,i)=>{
       const car=makeCar(color,.96+((i%3)*.01));
@@ -634,8 +634,8 @@
 
   function resetRivals() {
     const lanes=[-6,-3,0,3,6,-6,-3,3,6];
-    const starts=[18,12,6,-6,-12,-18,-24,-30,-36];
-    const targetSpeeds=[260,264,268,256,272,266,262,270,264];
+    const starts=[18,36,54,72,90,108,126,144,162];
+    const targetSpeeds=[252,266,258,270,260,274,256,268,262];
 
     rivals.forEach((r,i)=>{
       r.distance=starts[i];
@@ -961,26 +961,35 @@
       r.changeTimer-=dt;
 
       if(r.changeTimer<=0){
-        r.targetLane=lanes[Math.floor(Math.random()*lanes.length)];
-        r.changeTimer=1.8+Math.random()*3.2;
+        const openLanes=lanes.filter(lane=>{
+          return !rivals.some((other,j)=>
+            j!==i &&
+            Math.abs(other.distance-r.distance)<22 &&
+            Math.abs(other.lane-lane)<1.6
+          );
+        });
+        const choices=openLanes.length?openLanes:lanes;
+        r.targetLane=choices[Math.floor(Math.random()*choices.length)];
+        r.changeTimer=2.1+Math.random()*3.4;
       }
 
       r.lane+=(r.targetLane-r.lane)*Math.min(1,dt*1.2);
 
-      const gap=r.distance-distance;
-      let targetSpeed=r.cruiseSpeed+Math.sin(performance.now()*.0013+i)*8;
+      let targetSpeed=r.cruiseSpeed+Math.sin(performance.now()*.0013+i)*6;
 
-      // Keep the grid competitive instead of letting cars disappear far ahead.
-      if(gap>75) targetSpeed-=34;
-      else if(gap>45) targetSpeed-=18;
-      if(gap<-75) targetSpeed+=24;
-      else if(gap<-45) targetSpeed+=12;
+      // Keep rivals separated instead of bunching into one pack.
+      const carAhead=rivals.find((other,j)=>
+        j!==i &&
+        other.distance>r.distance &&
+        other.distance-r.distance<24 &&
+        Math.abs(other.lane-r.lane)<1.8
+      );
+      if(carAhead) targetSpeed=Math.min(targetSpeed,carAhead.speed-10);
 
-      // Rivals accelerate from the start just like the player instead of launching at full speed.
-      const aiAcceleration=92;
+      const aiAcceleration=82;
       const maxStep=aiAcceleration*dt;
       r.speed+=THREE.MathUtils.clamp(targetSpeed-r.speed,-maxStep,maxStep);
-      r.speed=THREE.MathUtils.clamp(r.speed,0,305);
+      r.speed=THREE.MathUtils.clamp(r.speed,0,300);
       r.distance+=(r.speed/3.6)*dt;
 
       const rel=r.distance-distance;
