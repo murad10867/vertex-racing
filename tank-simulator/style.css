@@ -1,0 +1,65 @@
+:root{
+  --bg:#050806;
+  --panel:#101910;
+  --text:#f4f7f1;
+  --muted:#9da99a;
+  --accent:#b7c879;
+  --border:rgba(255,255,255,.10)
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#050806;color:var(--text);font-family:Arial,Tahoma,sans-serif}
+body{background:radial-gradient(circle at 50% 0,#24301f,#0c120b 48%,#030503)}
+button{font:inherit;color:inherit;cursor:pointer}
+.topbar{min-height:68px;padding:10px clamp(14px,4vw,38px);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:rgba(5,9,5,.93);position:relative;z-index:20}
+.brand{display:flex;align-items:center;gap:10px}
+.brand>span{font-size:34px}
+.brand strong,.brand small{display:block}
+.brand small{font-size:11px;color:var(--muted)}
+.topbar button{padding:10px 14px;border:1px solid var(--border);border-radius:10px;background:#192219}
+.page{width:min(1160px,calc(100% - 20px));margin:auto;padding:24px 0 45px}
+.hero{text-align:center;margin-bottom:18px}
+.hero>span{color:#d4dd91;font-size:10px;letter-spacing:3px;font-weight:900}
+.hero h1{font-size:clamp(34px,6vw,66px);margin:6px 0;text-shadow:0 4px 0 rgba(0,0,0,.22)}
+.hero p{margin:0;color:var(--muted)}
+.game-layout{display:grid;grid-template-columns:225px minmax(0,1fr);gap:18px;align-items:start}
+.panel{padding:16px;border:1px solid var(--border);border-radius:18px;background:linear-gradient(145deg,#111a10,#1b2818);position:sticky;top:82px}
+.panel>div{padding:11px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.panel span{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}
+.panel strong{font-size:20px}
+.panel .controls-help{border-bottom:0}
+.panel p{margin:0;color:var(--muted);font-size:11px;line-height:1.9}
+.game-card{position:relative;overflow:hidden;border:1px solid rgba(205,218,138,.24);border-radius:20px;background:#11170e;box-shadow:0 28px 80px rgba(0,0,0,.48)}
+canvas{display:block;width:100%;height:auto;aspect-ratio:8/5;background:#899477;touch-action:none}
+.game-card::after{content:"3D";position:absolute;top:12px;left:12px;z-index:3;padding:7px 10px;border-radius:999px;background:rgba(7,10,6,.65);border:1px solid rgba(255,255,255,.14);font-size:10px;font-weight:900;letter-spacing:1px;pointer-events:none}
+#crosshair{position:absolute;left:50%;top:50%;z-index:5;transform:translate(-50%,-50%);font-size:30px;line-height:1;color:rgba(255,255,255,.8);text-shadow:0 1px 5px #000;pointer-events:none}
+.message{position:absolute;top:18px;right:50%;transform:translateX(50%);z-index:6;padding:8px 13px;border-radius:999px;background:rgba(5,8,5,.72);font-size:12px;font-weight:800;opacity:0;transition:.15s;pointer-events:none}
+.message.show{opacity:1}
+.overlay{position:absolute;inset:0;z-index:10;display:grid;place-items:center;padding:20px;background:rgba(4,7,4,.74);backdrop-filter:blur(8px);opacity:0;visibility:hidden}
+.overlay.show{opacity:1;visibility:visible}
+.overlay>div{width:min(430px,100%);padding:28px;text-align:center;border:1px solid var(--border);border-radius:20px;background:rgba(12,18,10,.96)}
+.overlay span{font-size:58px}
+.overlay h2{font-size:30px;margin:10px 0}
+.overlay p{color:var(--muted);line-height:1.7}
+.overlay button{padding:12px 22px;border:0;border-radius:11px;background:linear-gradient(135deg,#81934b,#c3cf83);color:#17200f;font-weight:900}
+.mobile-controls{display:none;margin-top:14px;gap:14px;align-items:center;justify-content:center;direction:ltr}
+.move-pad{text-align:center}
+.move-pad>button{display:block;margin:4px auto}
+.move-pad div{display:flex}
+.mobile-controls button{min-width:65px;height:52px;margin:4px;border:1px solid var(--border);border-radius:12px;background:#172218;font-size:15px;font-weight:900;touch-action:none;user-select:none}
+.action-pad{display:grid;grid-template-columns:repeat(2,1fr)}
+.action-pad .fire{background:#733b2d}
+footer{text-align:center;color:#657061;padding:0 15px 28px;font-weight:700}
+@media(max-width:820px){
+  .game-layout{grid-template-columns:1fr}
+  .panel{position:static;display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+  .panel>div{padding:9px!important;text-align:center;border:0!important;background:rgba(255,255,255,.03);border-radius:11px}
+  .panel .controls-help{grid-column:1/-1}
+  .mobile-controls{display:flex}
+}
+@media(max-width:520px){
+  .page{width:min(100% - 8px,1160px);padding-top:18px}
+  .brand strong{font-size:14px}.brand small{display:none}
+  .game-card{border-radius:14px}
+  .hero p{font-size:13px}
+  .mobile-controls{flex-direction:column}
+}
