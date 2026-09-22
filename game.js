@@ -75,10 +75,10 @@
   ];
 
   const MAP_CONFIGS = [
-    {id:'coast',name:'Sunset Coast',cost:0,difficulty:1,curve:.72,hill:.55,obstacleEvery:8.5,aiBoost:0,sky:0x63c9ff,fog:0xb7e7ff,desc:'منعطفات واسعة وعقبات قليلة.'},
-    {id:'neon',name:'Neon City',cost:900,difficulty:2,curve:1.00,hill:.72,obstacleEvery:6.7,aiBoost:7,sky:0x384a88,fog:0x6c79a7,desc:'منعطفات أسرع وحواجز أكثر.'},
-    {id:'alpine',name:'Alpine Rush',cost:2200,difficulty:3,curve:1.28,hill:1.05,obstacleEvery:5.2,aiBoost:13,sky:0xa7d8ef,fog:0xd8ecf2,desc:'مرتفعات ومنعطفات حادة وعقبات متقاربة.'},
-    {id:'volcano',name:'Volcano Pass',cost:4500,difficulty:4,curve:1.55,hill:1.35,obstacleEvery:4.1,aiBoost:20,sky:0xd76938,fog:0x6e3a31,desc:'أصعب خريطة: انعطافات قوية وعقبات كثيرة.'}
+    {id:'coast',name:'Sunset Coast',cost:0,difficulty:1,curve:.72,hill:.55,obstacleEvery:9999,aiBoost:0,sky:0x63c9ff,fog:0xb7e7ff,desc:'منعطفات واسعة وسريعة.'},
+    {id:'neon',name:'Neon City',cost:900,difficulty:2,curve:1.00,hill:.72,obstacleEvery:9999,aiBoost:7,sky:0x384a88,fog:0x6c79a7,desc:'منعطفات أسرع داخل المدينة.'},
+    {id:'alpine',name:'Alpine Rush',cost:2200,difficulty:3,curve:1.28,hill:1.05,obstacleEvery:9999,aiBoost:13,sky:0xa7d8ef,fog:0xd8ecf2,desc:'مرتفعات ومنعطفات حادة.'},
+    {id:'volcano',name:'Volcano Pass',cost:4500,difficulty:4,curve:1.55,hill:1.35,obstacleEvery:9999,aiBoost:20,sky:0xd76938,fog:0x6e3a31,desc:'أصعب خريطة: منعطفات قوية وسرعات أعلى.'}
   ];
 
   let coins=Number(localStorage.getItem('vertexRacingCoins')||0);
@@ -804,49 +804,8 @@
   }
 
   function updateObstacles(dt){
-    obstacleTimer-=dt;
-    const m=mapConfig();
-
-    if(obstacleTimer<=0&&speed>70){
-      spawnObstacle();
-      obstacleTimer=m.obstacleEvery*(.82+Math.random()*.36);
-    }
-
-    const worldMove=(speed/3.6)*dt;
-
-    for(let i=obstacles.length-1;i>=0;i--){
-      const o=obstacles[i];
-      o.group.position.z+=worldMove;
-
-      const worldPos=distance+Math.max(0,-o.group.position.z);
-      o.group.position.x=trackCurve(worldPos)-trackCurve(distance);
-      o.group.position.y=(trackHill(worldPos)-trackHill(distance))*.28;
-
-      if(!o.hit&&crashCooldown<=0&&jumpY<.8){
-        const dz=Math.abs(PLAYER_Z-o.group.position.z);
-
-        if(dz<3.8){
-          for(const part of o.parts){
-            const obstacleX=o.group.position.x+part.position.x;
-            if(Math.abs(playerCar.position.x-obstacleX)<2.0){
-              o.hit=true;
-              crashCooldown=.8;
-              speed*=.54;
-              nitro=Math.max(0,nitro-18);
-              score=Math.max(0,score-100);
-              burstSparks((playerCar.position.x+obstacleX)/2,PLAYER_Z,12);
-              setCombo('OBSTACLE -100');
-              break;
-            }
-          }
-        }
-      }
-
-      if(o.group.position.z>45){
-        scene.remove(o.group);
-        obstacles.splice(i,1);
-      }
-    }
+    // Road obstacles are disabled. Ramps and roadside scenery remain available.
+    return;
   }
 
   function spawnRamp() {
