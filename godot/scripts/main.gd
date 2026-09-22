@@ -360,15 +360,18 @@ func _create_rivals() -> void:
 		Color8(255, 139, 53),
 		Color8(79, 104, 255)
 	]
+	var starts := [-18.0, -12.0, -6.0, 6.0, 12.0, 18.0, 24.0, 30.0, 36.0]
+	var target_speeds := [72.0, 73.0, 74.0, 71.0, 75.0, 73.5, 72.5, 74.5, 73.0]
 
 	for i in range(9):
 		var rival := _create_car(colors[i], false)
-		rival.position = Vector3(rival_lanes[i], 0.0, -18.0 - float(i) * 15.0)
+		rival.position = Vector3(rival_lanes[i], 0.0, starts[i])
 		add_child(rival)
 
 		rivals.append({
 			"node": rival,
-			"speed": 66.0 + float(i % 5) * 2.2 + float(i / 5) * 1.0,
+			"speed": 0.0,
+			"target_speed": target_speeds[i],
 			"target_lane": rival_lanes[i],
 			"change_timer": 1.6 + float(i % 4) * 0.6,
 			"index": i
@@ -556,8 +559,16 @@ func _update_rivals(delta: float) -> void:
 			min(1.0, delta * 1.1)
 		)
 
-		var ai_speed := float(rival_data["speed"]) + sin(Time.get_ticks_msec() * 0.001 + float(rival_data["index"])) * 4.0
-		rival.position.z -= ai_speed * delta
+		var target_speed := float(rival_data["target_speed"]) + sin(Time.get_ticks_msec() * 0.001 + float(rival_data["index"])) * 2.0
+		var gap := car.position.z - rival.position.z
+
+		if gap > 70.0:
+			target_speed += 5.0
+		elif gap < -70.0:
+			target_speed -= 8.0
+
+		rival_data["speed"] = move_toward(float(rival_data["speed"]), target_speed, 18.0 * delta)
+		rival.position.z -= float(rival_data["speed"]) * delta
 
 		var lane_delta := float(rival_data["target_lane"]) - rival.position.x
 		rival.rotation.y = -lane_delta * 0.045
@@ -639,9 +650,10 @@ func _reset_race() -> void:
 	for i in range(rivals.size()):
 		var rival_data = rivals[i]
 		var rival: Node3D = rival_data["node"]
-		rival.position = Vector3(rival_lanes[i], 0.0, -18.0 - float(i) * 15.0)
+		var starts := [-18.0, -12.0, -6.0, 6.0, 12.0, 18.0, 24.0, 30.0, 36.0]
+		rival.position = Vector3(rival_lanes[i], 0.0, starts[i])
 		rival.rotation = Vector3.ZERO
-		rival_data["speed"] = 66.0 + float(i % 5) * 2.2 + float(i / 5) * 1.0
+		rival_data["speed"] = 0.0
 		rival_data["target_lane"] = rival_lanes[i]
 		rival_data["change_timer"] = 1.6 + float(i % 4) * 0.6
 
