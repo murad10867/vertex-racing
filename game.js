@@ -124,6 +124,10 @@
   const smokeParticles = [];
   const sparkParticles = [];
   const neonProps = [];
+  const projectiles = [];
+
+  const shotGeometry = new THREE.CylinderGeometry(.075,.075,1.55,6);
+  const shotMaterial = new THREE.MeshBasicMaterial({color:0xffdf62});
 
   let nitroLight;
 
@@ -145,6 +149,7 @@
   let driftTime = 0;
   let comboTimer = 0;
   let crashCooldown = 0;
+  let shotCooldown = 0;
   let raceFinished = false;
 
   function makeCar(color, scale = 1) {
@@ -713,6 +718,85 @@
     }
   }
 
+  function fireWeapon(){
+    if(!running||shotCooldown>0) return;
+
+    shotCooldown=.18;
+
+    const shot=new THREE.Mesh(shotGeometry,shotMaterial);
+    shot.rotation.x=Math.PI/2;
+    shot.position.set(
+      playerCar.position.x,
+      playerCar.position.y+1.0,
+      PLAYER_Z-3.6
+    );
+    scene.add(shot);
+
+    projectiles.push({
+      mesh:shot,
+      vx:-steerVisual*25,
+      vz:-125,
+      life:1.8
+    });
+  }
+
+  function updateProjectiles(dt){
+    shotCooldown=Math.max(0,shotCooldown-dt);
+
+    for(let i=projectiles.length-1;i>=0;i--){
+      const p=projectiles[i];
+      p.life-=dt;
+      p.mesh.position.x+=p.vx*dt;
+      p.mesh.position.z+=p.vz*dt;
+
+      let hit=false;
+
+      for(const r of rivals){
+        if(!r.mesh.visible) continue;
+
+        const dx=Math.abs(p.mesh.position.x-r.mesh.position.x);
+        const dz=Math.abs(p.mesh.position.z-r.mesh.position.z);
+
+        if(dx<2.0&&dz<3.4){
+          r.speed*=.42;
+          r.targetLane=THREE.MathUtils.clamp(
+            r.lane+(r.lane>=p.mesh.position.x?3.5:-3.5),
+            -8,
+            8
+          );
+          score+=100;
+          nitro=Math.min(100,nitro+4);
+          burstSparks(r.mesh.position.x,r.mesh.position.z,14);
+          setCombo('SHOT +100');
+          hit=true;
+          break;
+        }
+      }
+
+      if(!hit){
+        for(const t of traffic){
+          const dx=Math.abs(p.mesh.position.x-t.mesh.position.x);
+          const dz=Math.abs(p.mesh.position.z-t.mesh.position.z);
+
+          if(dx<2.0&&dz<3.4){
+            t.speed=Math.max(20,t.speed*.35);
+            t.mesh.rotation.z+=(p.mesh.position.x<t.mesh.position.x?.65:-.65);
+            score+=80;
+            burstSparks(t.mesh.position.x,t.mesh.position.z,12);
+            setCombo('SHOT +80');
+            hit=true;
+            break;
+          }
+        }
+      }
+
+      if(hit||p.life<=0||p.mesh.position.z<-105){
+        scene.remove(p.mesh);
+        projectiles.splice(i,1);
+      }
+    }
+  }
+
   function updateEffects(dt,drifting,nitroActive) {
     if(drifting && speed>110 && Math.random()<dt*22) emitSmoke();
 
@@ -923,6 +1007,8 @@
     ramps.length=0;
     obstacles.forEach(o=>scene.remove(o.group));
     obstacles.length=0;
+    projectiles.forEach(p=>scene.remove(p.mesh));
+    projectiles.length=0;
   }
 
   function reset(){
@@ -943,6 +1029,7 @@
     driftTime=0;
     comboTimer=0;
     crashCooldown=0;
+    shotCooldown=0;
 
     clearDynamic();
     resetRivals();
@@ -1048,6 +1135,9 @@
     const right=keys.ArrowRight||keys.KeyD;
     const driftHeld=keys.ShiftLeft||keys.ShiftRight;
     const nitroHeld=keys.Space;
+    const fireHeld=keys.KeyE;
+
+    if(fireHeld) fireWeapon();
 
     const steer=(left?-1:0)+(right?1:0);
     const drifting=driftHeld&&steer!==0&&speed>95&&jumpY<.15;
@@ -1350,6 +1440,7 @@
     updateWorld(dt);
     updateObstacles(dt);
     updateRivals(dt);
+    updateProjectiles(dt);
     updateEffects(dt,state.drifting,state.nitroActive);
     updateCamera(dt,state.nitroActive,state.drifting);
     updateHud();
@@ -1374,7 +1465,7 @@
   }
 
   document.addEventListener('keydown',e=>{
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault();
+    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyE'].includes(e.code)) e.preventDefault();
     keys[e.code]=true;
   },{passive:false});
 
