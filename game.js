@@ -368,8 +368,20 @@
 
       if(isCar){
         card.innerHTML=
+          '<div class="car-preview car-preview-'+item.id+'" aria-hidden="true">'+
+            '<div class="preview-floor"></div>'+
+            '<div class="preview-car">'+
+              '<i class="preview-spoiler"></i>'+
+              '<i class="preview-body"></i>'+
+              '<i class="preview-glass"></i>'+
+              '<i class="preview-hood"></i>'+
+              '<i class="preview-wheel wheel-left"></i>'+
+              '<i class="preview-wheel wheel-right"></i>'+
+              '<i class="preview-light light-left"></i>'+
+              '<i class="preview-light light-right"></i>'+
+            '</div>'+
+          '</div>'+
           '<h3>'+item.name+'</h3>'+
-          '<div class="swatch" style="background:#'+item.color.toString(16).padStart(6,'0')+'"></div>'+
           '<div class="stats">'+
             '<span>سرعة '+item.maxSpeed+'</span>'+
             '<span>نيترو '+item.nitroSpeed+'</span>'+
