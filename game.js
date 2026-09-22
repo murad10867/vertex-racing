@@ -574,28 +574,32 @@
   function createRivals() {
     const colors=[
       0x00c8ff,0xffc23d,0x8e68ff,0x45dc82,0xff5f72,
-      0xf4f4f4,0x24d6c8,0xff8b35,0x5068ff
+      0xf4f4f4,0x24d6c8,0xff8b35,0x5068ff,0xff3fd2,
+      0x7cff4f,0x35a7ff
     ];
-    const lanes=[-6,-3,0,3,6,-6,-3,3,6];
-    const starts=[18,36,54,72,90,108,126,144,162];
-    const targetSpeeds=[252,266,258,270,260,274,256,268,262];
+    const lanes=[-8,-4,0,4,8];
 
-    colors.forEach((color,i)=>{
-      const car=makeCar(color,.96+((i%3)*.01));
-      car.position.set(lanes[i],0,PLAYER_Z-starts[i]/2.5);
+    for(let i=0;i<49;i++){
+      const color=colors[i%colors.length];
+      const lane=lanes[i%lanes.length];
+      const start=18+(i*16);
+      const cruiseSpeed=248+(i%9)*3;
+
+      const car=makeCar(color,.92+((i%4)*.012));
+      car.position.set(lane,0,PLAYER_Z-start/2.5);
       car.rotation.y=0;
       scene.add(car);
 
       rivals.push({
         mesh:car,
-        distance:starts[i],
+        distance:start,
         speed:0,
-        cruiseSpeed:targetSpeeds[i],
-        lane:lanes[i],
-        targetLane:lanes[i],
-        changeTimer:1.6+(i%4)*.6
+        cruiseSpeed,
+        lane,
+        targetLane:lane,
+        changeTimer:1.5+(i%5)*.55
       });
-    });
+    }
   }
 
   function setCombo(text) {
@@ -629,23 +633,24 @@
     raceText.textContent=Math.floor(progress)+'%';
 
     const ahead=rivals.filter(r=>r.distance>distance).length;
-    positionEl.textContent=(ahead+1)+' / 10';
+    positionEl.textContent=(ahead+1)+' / 50';
   }
 
   function resetRivals() {
-    const lanes=[-6,-3,0,3,6,-6,-3,3,6];
-    const starts=[18,36,54,72,90,108,126,144,162];
-    const targetSpeeds=[252,266,258,270,260,274,256,268,262];
+    const lanes=[-8,-4,0,4,8];
 
     rivals.forEach((r,i)=>{
-      r.distance=starts[i];
+      const lane=lanes[i%lanes.length];
+      const start=18+(i*16);
+
+      r.distance=start;
       r.speed=0;
-      r.cruiseSpeed=targetSpeeds[i];
-      r.lane=lanes[i];
-      r.targetLane=lanes[i];
-      r.changeTimer=1.6+(i%4)*.6;
+      r.cruiseSpeed=248+(i%9)*3;
+      r.lane=lane;
+      r.targetLane=lane;
+      r.changeTimer=1.5+(i%5)*.55;
       r.mesh.visible=true;
-      r.mesh.position.set(lanes[i],0,PLAYER_Z-starts[i]/2.5);
+      r.mesh.position.set(lane,0,PLAYER_Z-start/2.5);
       r.mesh.rotation.set(0,0,0);
     });
   }
@@ -692,7 +697,7 @@
     showOverlay(
       '🏁',
       'Vertex Racing: Nitro Rush',
-      'سباق آركيد سريع: نيترو، درفت، قفزات و9 منافسين فقط حتى خط النهاية.',
+      'سباق آركيد سريع: نيترو، درفت، قفزات و49 منافسًا حتى خط النهاية.',
       'ابدأ السباق',
       start
     );
@@ -715,7 +720,7 @@
 
     const ahead=rivals.filter(r=>r.distance>distance).length;
     const place=ahead+1;
-    const bonus=(5-place)*800;
+    const bonus=Math.max(0,(51-place)*80);
     score+=bonus;
 
     const finalScore=Math.floor(score);
@@ -955,7 +960,7 @@
   }
 
   function updateRivals(dt) {
-    const lanes=[-6,-3,0,3,6];
+    const lanes=[-8,-4,0,4,8];
 
     rivals.forEach((r,i)=>{
       r.changeTimer-=dt;
@@ -965,7 +970,7 @@
           return !rivals.some((other,j)=>
             j!==i &&
             Math.abs(other.distance-r.distance)<22 &&
-            Math.abs(other.lane-lane)<1.6
+            Math.abs(other.lane-lane)<2.2
           );
         });
         const choices=openLanes.length?openLanes:lanes;
@@ -982,7 +987,7 @@
         j!==i &&
         other.distance>r.distance &&
         other.distance-r.distance<24 &&
-        Math.abs(other.lane-r.lane)<1.8
+        Math.abs(other.lane-r.lane)<2.2
       );
       if(carAhead) targetSpeed=Math.min(targetSpeed,carAhead.speed-10);
 
