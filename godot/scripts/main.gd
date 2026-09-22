@@ -16,7 +16,7 @@ var race_finished := false
 var collision_cooldown := 0.0
 
 var rivals: Array = []
-var rival_lanes := [-6.0, 0.0, 6.0]
+var rival_lanes := [-6.0, -3.0, 0.0, 3.0, 6.0, -6.0, -3.0, 3.0, 6.0]
 
 var speed_label: Label
 var position_label: Label
@@ -352,19 +352,25 @@ func _create_rivals() -> void:
 	var colors := [
 		Color8(0, 199, 255),
 		Color8(255, 190, 55),
-		Color8(141, 97, 255)
+		Color8(141, 97, 255),
+		Color8(64, 220, 130),
+		Color8(255, 88, 112),
+		Color8(242, 242, 242),
+		Color8(34, 210, 198),
+		Color8(255, 139, 53),
+		Color8(79, 104, 255)
 	]
 
-	for i in range(3):
+	for i in range(9):
 		var rival := _create_car(colors[i], false)
-		rival.position = Vector3(rival_lanes[i], 0.0, -20.0 - float(i) * 18.0)
+		rival.position = Vector3(rival_lanes[i], 0.0, -18.0 - float(i) * 15.0)
 		add_child(rival)
 
 		rivals.append({
 			"node": rival,
-			"speed": 68.0 + float(i) * 3.2,
+			"speed": 66.0 + float(i % 5) * 2.2 + float(i / 5) * 1.0,
 			"target_lane": rival_lanes[i],
-			"change_timer": 1.6 + float(i),
+			"change_timer": 1.6 + float(i % 4) * 0.6,
 			"index": i
 		})
 
@@ -596,7 +602,7 @@ func _update_hud() -> void:
 		var rival: Node3D = rival_data["node"]
 		if rival.position.z < car.position.z:
 			ahead += 1
-	position_label.text = "المركز: %d / 4" % (ahead + 1)
+	position_label.text = "المركز: %d / 10" % (ahead + 1)
 
 
 func _finish_race() -> void:
@@ -613,7 +619,7 @@ func _finish_race() -> void:
 			ahead += 1
 
 	var place := ahead + 1
-	var place_text := "الأول 🏆" if place == 1 else ("الثاني 🥈" if place == 2 else ("الثالث 🥉" if place == 3 else "الرابع"))
+	var place_text := "الأول 🏆" if place == 1 else ("الثاني 🥈" if place == 2 else ("الثالث 🥉" if place == 3 else "المركز %d" % place))
 
 	finish_title.text = "خط النهاية 🏁"
 	finish_text.text = "مركزك: %s\nاضغط R لبدء سباق جديد" % place_text
@@ -633,11 +639,11 @@ func _reset_race() -> void:
 	for i in range(rivals.size()):
 		var rival_data = rivals[i]
 		var rival: Node3D = rival_data["node"]
-		rival.position = Vector3(rival_lanes[i], 0.0, -20.0 - float(i) * 18.0)
+		rival.position = Vector3(rival_lanes[i], 0.0, -18.0 - float(i) * 15.0)
 		rival.rotation = Vector3.ZERO
-		rival_data["speed"] = 68.0 + float(i) * 3.2
+		rival_data["speed"] = 66.0 + float(i % 5) * 2.2 + float(i / 5) * 1.0
 		rival_data["target_lane"] = rival_lanes[i]
-		rival_data["change_timer"] = 1.6 + float(i)
+		rival_data["change_timer"] = 1.6 + float(i % 4) * 0.6
 
 	finish_panel.visible = false
 	status_label.text = ""
