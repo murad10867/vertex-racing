@@ -19,6 +19,16 @@
   const overlayText = document.getElementById('overlayText');
   const startBtn = document.getElementById('startBtn');
   const restartBtn = document.getElementById('restartBtn');
+  const coinsEl = document.getElementById('coins');
+  const currentCarEl = document.getElementById('currentCar');
+  const currentMapEl = document.getElementById('currentMap');
+  const garageBtn = document.getElementById('garageBtn');
+  const mapsBtn = document.getElementById('mapsBtn');
+  const storeOverlay = document.getElementById('storeOverlay');
+  const storeTitle = document.getElementById('storeTitle');
+  const storeGrid = document.getElementById('storeGrid');
+  const storeClose = document.getElementById('storeClose');
+  const storeCoins = document.getElementById('storeCoins');
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.7));
@@ -57,12 +67,50 @@
   const SEGMENT_COUNT = 16;
   const WORLD_LENGTH = SEGMENT_LENGTH * SEGMENT_COUNT;
 
+  const CAR_CONFIGS = [
+    {id:'s1',name:'Vertex S1',cost:0,color:0xff304e,accel:132,maxSpeed:335,nitroSpeed:420,nitroAccel:205},
+    {id:'falcon',name:'Falcon GT',cost:1200,color:0x20cfff,accel:142,maxSpeed:350,nitroSpeed:440,nitroAccel:220},
+    {id:'vortex',name:'Vortex R',cost:2700,color:0x8f62ff,accel:151,maxSpeed:366,nitroSpeed:462,nitroAccel:235},
+    {id:'vx',name:'Vertex X',cost:5200,color:0xffb52f,accel:162,maxSpeed:385,nitroSpeed:490,nitroAccel:255}
+  ];
+
+  const MAP_CONFIGS = [
+    {id:'coast',name:'Sunset Coast',cost:0,difficulty:1,curve:.72,hill:.55,obstacleEvery:8.5,aiBoost:0,sky:0x63c9ff,fog:0xb7e7ff,desc:'منعطفات واسعة وعقبات قليلة.'},
+    {id:'neon',name:'Neon City',cost:900,difficulty:2,curve:1.00,hill:.72,obstacleEvery:6.7,aiBoost:7,sky:0x384a88,fog:0x6c79a7,desc:'منعطفات أسرع وحواجز أكثر.'},
+    {id:'alpine',name:'Alpine Rush',cost:2200,difficulty:3,curve:1.28,hill:1.05,obstacleEvery:5.2,aiBoost:13,sky:0xa7d8ef,fog:0xd8ecf2,desc:'مرتفعات ومنعطفات حادة وعقبات متقاربة.'},
+    {id:'volcano',name:'Volcano Pass',cost:4500,difficulty:4,curve:1.55,hill:1.35,obstacleEvery:4.1,aiBoost:20,sky:0xd76938,fog:0x6e3a31,desc:'أصعب خريطة: انعطافات قوية وعقبات كثيرة.'}
+  ];
+
+  let coins=Number(localStorage.getItem('vertexRacingCoins')||0);
+  let ownedCars=JSON.parse(localStorage.getItem('vertexRacingOwnedCars')||'["s1"]');
+  let ownedMaps=JSON.parse(localStorage.getItem('vertexRacingOwnedMaps')||'["coast"]');
+  let selectedCar=localStorage.getItem('vertexRacingSelectedCar')||'s1';
+  let selectedMap=localStorage.getItem('vertexRacingSelectedMap')||'coast';
+
+  if(!ownedCars.includes('s1')) ownedCars.push('s1');
+  if(!ownedMaps.includes('coast')) ownedMaps.push('coast');
+  if(!ownedCars.includes(selectedCar)) selectedCar='s1';
+  if(!ownedMaps.includes(selectedMap)) selectedMap='coast';
+
+  function carConfig(){ return CAR_CONFIGS.find(c=>c.id===selectedCar)||CAR_CONFIGS[0]; }
+  function mapConfig(){ return MAP_CONFIGS.find(m=>m.id===selectedMap)||MAP_CONFIGS[0]; }
+
+  function saveCareer(){
+    localStorage.setItem('vertexRacingCoins',String(coins));
+    localStorage.setItem('vertexRacingOwnedCars',JSON.stringify(ownedCars));
+    localStorage.setItem('vertexRacingOwnedMaps',JSON.stringify(ownedMaps));
+    localStorage.setItem('vertexRacingSelectedCar',selectedCar);
+    localStorage.setItem('vertexRacingSelectedMap',selectedMap);
+  }
+
   function trackCurve(worldPos){
-    return Math.sin(worldPos*.0062)*5.5 + Math.sin(worldPos*.00215)*8.5;
+    const m=mapConfig();
+    return (Math.sin(worldPos*.0062)*5.5 + Math.sin(worldPos*.00215)*8.5)*m.curve;
   }
 
   function trackHill(worldPos){
-    return Math.sin(worldPos*.0041)*1.25 + Math.sin(worldPos*.0017)*.7;
+    const m=mapConfig();
+    return (Math.sin(worldPos*.0041)*1.25 + Math.sin(worldPos*.0017)*.7)*m.hill;
   }
 
   const keys = Object.create(null);
@@ -71,6 +119,7 @@
   const traffic = [];
   const rivals = [];
   const ramps = [];
+  const obstacles = [];
   const streaks = [];
   const smokeParticles = [];
   const sparkParticles = [];
@@ -89,6 +138,7 @@
   let nitro = 100;
   let spawnTimer = 1;
   let rampTimer = 5;
+  let obstacleTimer = 5;
   let jumpY = 0;
   let jumpV = 0;
   let wasAirborne = false;
@@ -234,6 +284,135 @@
     g.userData.wheels = wheelMeshes;
     g.userData.flames = flames;
     return g;
+  }
+
+  function rebuildPlayerCar(){
+    const old=playerCar;
+    const pos=old?old.position.clone():new THREE.Vector3(0,0,PLAYER_Z);
+    const rot=old?old.rotation.clone():new THREE.Euler();
+
+    if(old) scene.remove(old);
+
+    playerCar=makeCar(carConfig().color,1.02);
+    playerCar.position.copy(pos);
+    playerCar.rotation.copy(rot);
+    scene.add(playerCar);
+
+    if(nitroLight){
+      nitroLight.removeFromParent();
+      playerCar.add(nitroLight);
+    }
+  }
+
+  function applyMapTheme(){
+    const m=mapConfig();
+    scene.background=new THREE.Color(m.sky);
+    scene.fog.color.setHex(m.fog);
+    renderer.toneMappingExposure=m.difficulty>=4?.86:(m.difficulty===2?.93:.98);
+    currentMapEl.textContent=m.name;
+  }
+
+  function updateCareerUI(){
+    coinsEl.textContent=coins;
+    storeCoins.textContent=coins;
+    currentCarEl.textContent=carConfig().name;
+    currentMapEl.textContent=mapConfig().name;
+  }
+
+  function buyOrSelect(type,id){
+    if(running){
+      setCombo('أنهِ السباق أولاً');
+      return;
+    }
+
+    const isCar=type==='car';
+    const list=isCar?CAR_CONFIGS:MAP_CONFIGS;
+    const owned=isCar?ownedCars:ownedMaps;
+    const item=list.find(x=>x.id===id);
+    if(!item) return;
+
+    if(!owned.includes(id)){
+      if(coins<item.cost) return;
+      coins-=item.cost;
+      owned.push(id);
+    }
+
+    if(isCar){
+      selectedCar=id;
+      rebuildPlayerCar();
+    }else{
+      selectedMap=id;
+      applyMapTheme();
+    }
+
+    saveCareer();
+    updateCareerUI();
+    reset();
+    renderStore(type);
+  }
+
+  function renderStore(type){
+    const isCar=type==='car';
+    const list=isCar?CAR_CONFIGS:MAP_CONFIGS;
+    const owned=isCar?ownedCars:ownedMaps;
+    const selected=isCar?selectedCar:selectedMap;
+
+    storeTitle.textContent=isCar?'السيارات':'الخرائط';
+    storeGrid.innerHTML='';
+
+    list.forEach(item=>{
+      const card=document.createElement('article');
+      card.className='store-card'+(selected===item.id?' selected':'');
+      const isOwned=owned.includes(item.id);
+      const canBuy=coins>=item.cost;
+
+      if(isCar){
+        card.innerHTML=
+          '<h3>'+item.name+'</h3>'+
+          '<div class="swatch" style="background:#'+item.color.toString(16).padStart(6,'0')+'"></div>'+
+          '<div class="stats">'+
+            '<span>سرعة '+item.maxSpeed+'</span>'+
+            '<span>نيترو '+item.nitroSpeed+'</span>'+
+            '<span>تسارع '+item.accel+'</span>'+
+          '</div>'+
+          '<p>'+(item.cost===0?'السيارة الأساسية.':'سيارة أسرع للخرائط الأصعب.')+'</p>';
+      }else{
+        card.innerHTML=
+          '<h3>'+item.name+'</h3>'+
+          '<div class="stats">'+
+            '<span>صعوبة '+item.difficulty+'/4</span>'+
+            '<span>منعطفات '+Math.round(item.curve*100)+'%</span>'+
+            '<span>عقبات '+(5-item.difficulty)+'</span>'+
+          '</div>'+
+          '<p>'+item.desc+'</p>';
+      }
+
+      const btn=document.createElement('button');
+      if(selected===item.id) btn.textContent='محدد ✓';
+      else if(isOwned) btn.textContent='اختيار';
+      else btn.textContent='شراء '+item.cost+' 🪙';
+      btn.disabled=selected===item.id||(!isOwned&&!canBuy);
+      btn.onclick=()=>buyOrSelect(type,item.id);
+      card.appendChild(btn);
+      storeGrid.appendChild(card);
+    });
+
+    updateCareerUI();
+  }
+
+  function openStore(type){
+    if(running){
+      setCombo('أنهِ السباق أولاً');
+      return;
+    }
+    renderStore(type);
+    storeOverlay.classList.add('show');
+    storeOverlay.setAttribute('aria-hidden','false');
+  }
+
+  function closeStore(){
+    storeOverlay.classList.remove('show');
+    storeOverlay.setAttribute('aria-hidden','true');
   }
 
   function makeRoadSegment(z) {
@@ -479,8 +658,10 @@
       sparkParticles.push({mesh:p,life:0,vx:0,vy:0,vz:0});
     }
 
-    nitroLight=new THREE.PointLight(0x21dfff,0,10);
-    nitroLight.position.set(0,.9,3.9);
+    if(!nitroLight){
+      nitroLight=new THREE.PointLight(0x21dfff,0,10);
+      nitroLight.position.set(0,.9,3.9);
+    }
     playerCar.add(nitroLight);
   }
 
@@ -572,6 +753,88 @@
       halfL:car.userData.halfL,
       passed:false
     });
+  }
+
+  function spawnObstacle() {
+    if(obstacles.length>=7) return;
+
+    const m=mapConfig();
+    const lanes=[-8,-4,0,4,8];
+    const gapLane=lanes[Math.floor(Math.random()*lanes.length)];
+    const blockedCount=Math.min(4,1+m.difficulty);
+    const candidates=lanes.filter(l=>l!==gapLane).sort(()=>Math.random()-.5).slice(0,blockedCount);
+
+    const group=new THREE.Group();
+    const parts=[];
+
+    candidates.forEach((lane,index)=>{
+      const color=index%2===0?0xff4b3d:0xffc13d;
+      const mat=new THREE.MeshStandardMaterial({color,roughness:.68,metalness:.18});
+      let mesh;
+
+      if(m.difficulty>=3&&index%2===0){
+        mesh=new THREE.Mesh(new THREE.BoxGeometry(2.7,1.55,1.15),mat);
+        mesh.position.y=.78;
+      }else{
+        mesh=new THREE.Mesh(new THREE.ConeGeometry(.72,1.9,8),mat);
+        mesh.position.y=.95;
+      }
+
+      mesh.position.x=lane;
+      mesh.castShadow=true;
+      group.add(mesh);
+      parts.push(mesh);
+    });
+
+    group.position.z=-180-Math.random()*110;
+    scene.add(group);
+    obstacles.push({group,parts,hit:false});
+  }
+
+  function updateObstacles(dt){
+    obstacleTimer-=dt;
+    const m=mapConfig();
+
+    if(obstacleTimer<=0&&speed>70){
+      spawnObstacle();
+      obstacleTimer=m.obstacleEvery*(.82+Math.random()*.36);
+    }
+
+    const worldMove=(speed/3.6)*dt;
+
+    for(let i=obstacles.length-1;i>=0;i--){
+      const o=obstacles[i];
+      o.group.position.z+=worldMove;
+
+      const worldPos=distance+Math.max(0,-o.group.position.z);
+      o.group.position.x=trackCurve(worldPos)-trackCurve(distance);
+      o.group.position.y=(trackHill(worldPos)-trackHill(distance))*.28;
+
+      if(!o.hit&&crashCooldown<=0&&jumpY<.8){
+        const dz=Math.abs(PLAYER_Z-o.group.position.z);
+
+        if(dz<3.8){
+          for(const part of o.parts){
+            const obstacleX=o.group.position.x+part.position.x;
+            if(Math.abs(playerCar.position.x-obstacleX)<2.0){
+              o.hit=true;
+              crashCooldown=.8;
+              speed*=.54;
+              nitro=Math.max(0,nitro-18);
+              score=Math.max(0,score-100);
+              burstSparks((playerCar.position.x+obstacleX)/2,PLAYER_Z,12);
+              setCombo('OBSTACLE -100');
+              break;
+            }
+          }
+        }
+      }
+
+      if(o.group.position.z>45){
+        scene.remove(o.group);
+        obstacles.splice(i,1);
+      }
+    }
   }
 
   function spawnRamp() {
@@ -687,6 +950,8 @@
     traffic.length=0;
     ramps.forEach(r=>scene.remove(r.mesh));
     ramps.length=0;
+    obstacles.forEach(o=>scene.remove(o.group));
+    obstacles.length=0;
   }
 
   function reset(){
@@ -700,6 +965,7 @@
     nitro=100;
     spawnTimer=.7;
     rampTimer=4.2;
+    obstacleTimer=3.8;
     jumpY=0;
     jumpV=0;
     wasAirborne=false;
@@ -724,7 +990,7 @@
     showOverlay(
       '🏁',
       'Vertex Racing: Nitro Rush',
-      'سباق أركيد كلاسيكي سريع: طرق متعرجة، نيترو و49 منافسًا حتى خط النهاية.',
+      'اربح السباق لتحصل على عملات، ثم اشترِ سيارات أسرع وافتح خرائط أصعب.',
       'ابدأ السباق',
       start
     );
@@ -751,6 +1017,13 @@
     score+=bonus;
 
     const finalScore=Math.floor(score);
+    const mapBonus=mapConfig().difficulty*45;
+    const placeBonus=Math.max(25,(51-place)*14);
+    const earned=Math.floor(80+placeBonus+mapBonus+finalScore/180);
+    coins+=earned;
+    saveCareer();
+    updateCareerUI();
+
     const old=Number(localStorage.getItem('vertexRacingBestNitro')||0);
     if(finalScore>old) localStorage.setItem('vertexRacingBestNitro',String(finalScore));
     best();
@@ -760,7 +1033,7 @@
     showOverlay(
       place===1?'🏆':'🏁',
       'وصلت خط النهاية',
-      'مركزك: '+placeText+' — نتيجتك: '+finalScore,
+      'مركزك: '+placeText+' — نتيجتك: '+finalScore+' — ربحت '+earned+' 🪙',
       'سباق جديد',
       ()=>{reset();start();}
     );
@@ -809,7 +1082,8 @@
     const drifting=driftHeld&&steer!==0&&speed>95&&jumpY<.15;
     const nitroActive=nitroHeld&&nitro>0&&speed>45&&!drifting;
 
-    if(gas) speed+=132*dt;
+    const activeCar=carConfig();
+    if(gas) speed+=activeCar.accel*dt;
     else speed-=19*dt;
 
     if(brake) speed-=175*dt;
@@ -829,14 +1103,14 @@
     }
 
     if(nitroActive){
-      speed+=205*dt;
+      speed+=activeCar.nitroAccel*dt;
       nitro-=27*dt;
       score+=30*dt;
     }else{
       nitro=Math.min(100,nitro+2.2*dt);
     }
 
-    const maxSpeed=nitroActive?420:335;
+    const maxSpeed=nitroActive?activeCar.nitroSpeed:activeCar.maxSpeed;
     speed=THREE.MathUtils.clamp(speed,0,maxSpeed);
 
     const steerPower=4.4+speed/88+(drifting?2.3:0);
@@ -909,8 +1183,8 @@
       if(seg.position.z>SEGMENT_LENGTH) seg.position.z-=WORLD_LENGTH;
 
       const worldPos=distance+Math.max(0,-seg.position.z);
-      const curve=trackCurve(worldPos);
-      const hill=trackHill(worldPos);
+      const curve=trackCurve(worldPos)-trackCurve(distance);
+      const hill=trackHill(worldPos)-trackHill(distance);
       seg.position.x=curve;
       seg.position.y=hill*.28;
       seg.rotation.y=(trackCurve(worldPos+8)-curve)*.0042;
@@ -926,8 +1200,8 @@
       if(s.mesh.position.z>45) s.mesh.position.z-=s.wrap;
 
       const worldPos=distance+Math.max(0,-s.mesh.position.z);
-      const curve=trackCurve(worldPos);
-      const hill=trackHill(worldPos);
+      const curve=trackCurve(worldPos)-trackCurve(distance);
+      const hill=trackHill(worldPos)-trackHill(distance);
       s.mesh.position.x=s.baseX+curve;
       s.mesh.position.y=s.baseY+hill*.28;
     });
@@ -1025,7 +1299,7 @@
 
       r.lane+=(r.targetLane-r.lane)*Math.min(1,dt*1.2);
 
-      let targetSpeed=r.cruiseSpeed+Math.sin(performance.now()*.0013+i)*6;
+      let targetSpeed=r.cruiseSpeed+mapConfig().aiBoost+Math.sin(performance.now()*.0013+i)*6;
 
       // Keep rivals separated instead of bunching into one pack.
       const carAhead=rivals.find((other,j)=>
@@ -1103,6 +1377,7 @@
 
     const state=updatePlayer(dt);
     updateWorld(dt);
+    updateObstacles(dt);
     updateRivals(dt);
     updateEffects(dt,state.drifting,state.nitroActive);
     updateCamera(dt,state.nitroActive,state.drifting);
@@ -1149,6 +1424,10 @@
     });
   });
 
+  garageBtn.addEventListener('click',()=>openStore('car'));
+  mapsBtn.addEventListener('click',()=>openStore('map'));
+  storeClose.addEventListener('click',closeStore);
+  storeOverlay.addEventListener('click',e=>{ if(e.target===storeOverlay) closeStore(); });
   restartBtn.addEventListener('click',reset);
 
   addRoad();
@@ -1156,12 +1435,12 @@
   addRetroHorizon();
   addSpeedStreaks();
 
-  playerCar=makeCar(0xff304e,1.02);
-  playerCar.position.set(0,0,PLAYER_Z);
-  scene.add(playerCar);
-
+  rebuildPlayerCar();
   initEffects();
   createRivals();
+  applyMapTheme();
+  updateCareerUI();
+  saveCareer();
   best();
   reset();
 })();
