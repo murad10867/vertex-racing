@@ -65,3 +65,19 @@ footer{text-align:center;color:#60707b;padding:0 15px 28px;font-weight:700}
 .mobile-controls button:active{transform:scale(.95);filter:brightness(1.18)}
 .mobile-controls .nitro:active{box-shadow:0 0 24px rgba(36,233,255,.38)}
 .mobile-controls .drift:active{box-shadow:0 0 20px rgba(255,74,112,.28)}
+
+
+/* Original retro-arcade chase presentation */
+.hero>span{color:#ffd34a}
+.hero h1{
+  text-shadow:0 4px 0 rgba(0,0,0,.18),0 0 28px rgba(36,233,255,.14);
+}
+.game-card{
+  border-color:rgba(255,211,74,.28);
+}
+.panel{
+  background:linear-gradient(145deg,#101c2b,#15283b);
+}
+.race-track i{
+  background:linear-gradient(90deg,#ffd34a,#ff754a,#ff3e72);
+}
