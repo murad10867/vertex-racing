@@ -30,8 +30,8 @@
   renderer.toneMappingExposure = .9;
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x7bc5ef);
-  scene.fog = new THREE.Fog(0x91c5df, 95, 520);
+  scene.background = new THREE.Color(0x63c9ff);
+  scene.fog = new THREE.Fog(0xb7e7ff, 120, 620);
 
   const camera = new THREE.PerspectiveCamera(62, 960 / 600, .1, 1100);
   camera.position.set(0, 7.2, 18);
@@ -56,6 +56,14 @@
   const SEGMENT_LENGTH = 40;
   const SEGMENT_COUNT = 16;
   const WORLD_LENGTH = SEGMENT_LENGTH * SEGMENT_COUNT;
+
+  function trackCurve(worldPos){
+    return Math.sin(worldPos*.0062)*5.5 + Math.sin(worldPos*.00215)*8.5;
+  }
+
+  function trackHill(worldPos){
+    return Math.sin(worldPos*.0041)*1.25 + Math.sin(worldPos*.0017)*.7;
+  }
 
   const keys = Object.create(null);
   const roadSegments = [];
@@ -405,6 +413,25 @@
     }
   }
 
+  function addRetroHorizon() {
+    const sunMat=new THREE.MeshBasicMaterial({color:0xffc64d});
+    const sunDisc=new THREE.Mesh(new THREE.CircleGeometry(25,40),sunMat);
+    sunDisc.position.set(58,38,-420);
+    scene.add(sunDisc);
+
+    const pylonColors=[0xff315d,0x24d6ff,0xffc23d,0x7d5cff];
+    for(let i=0;i<36;i++){
+      const side=i%2===0?-1:1;
+      const pole=new THREE.Mesh(
+        new THREE.BoxGeometry(.45,4.8,.45),
+        new THREE.MeshBasicMaterial({color:pylonColors[i%pylonColors.length]})
+      );
+      pole.position.set(side*(13.5+(i%3)*1.2),2.4,-30-i*18);
+      scene.add(pole);
+      scenery.push({mesh:pole,wrap:680});
+    }
+  }
+
   function addSpeedStreaks() {
     const mat = new THREE.MeshBasicMaterial({
       color:0x8beeff,
@@ -697,7 +724,7 @@
     showOverlay(
       '🏁',
       'Vertex Racing: Nitro Rush',
-      'سباق آركيد سريع: نيترو، درفت، قفزات و49 منافسًا حتى خط النهاية.',
+      'سباق أركيد كلاسيكي سريع: طرق متعرجة، نيترو و49 منافسًا حتى خط النهاية.',
       'ابدأ السباق',
       start
     );
@@ -782,7 +809,7 @@
     const drifting=driftHeld&&steer!==0&&speed>95&&jumpY<.15;
     const nitroActive=nitroHeld&&nitro>0&&speed>45&&!drifting;
 
-    if(gas) speed+=118*dt;
+    if(gas) speed+=132*dt;
     else speed-=19*dt;
 
     if(brake) speed-=175*dt;
@@ -809,7 +836,7 @@
       nitro=Math.min(100,nitro+2.2*dt);
     }
 
-    const maxSpeed=nitroActive?395:315;
+    const maxSpeed=nitroActive?420:335;
     speed=THREE.MathUtils.clamp(speed,0,maxSpeed);
 
     const steerPower=4.4+speed/88+(drifting?2.3:0);
@@ -880,11 +907,29 @@
     roadSegments.forEach(seg=>{
       seg.position.z+=worldMove;
       if(seg.position.z>SEGMENT_LENGTH) seg.position.z-=WORLD_LENGTH;
+
+      const worldPos=distance+Math.max(0,-seg.position.z);
+      const curve=trackCurve(worldPos);
+      const hill=trackHill(worldPos);
+      seg.position.x=curve;
+      seg.position.y=hill*.28;
+      seg.rotation.y=(trackCurve(worldPos+8)-curve)*.0042;
     });
 
     scenery.forEach(s=>{
+      if(s.baseX===undefined){
+        s.baseX=s.mesh.position.x;
+        s.baseY=s.mesh.position.y;
+      }
+
       s.mesh.position.z+=worldMove;
       if(s.mesh.position.z>45) s.mesh.position.z-=s.wrap;
+
+      const worldPos=distance+Math.max(0,-s.mesh.position.z);
+      const curve=trackCurve(worldPos);
+      const hill=trackHill(worldPos);
+      s.mesh.position.x=s.baseX+curve;
+      s.mesh.position.y=s.baseY+hill*.28;
     });
 
     distance+=(speed/3.6)*dt;
@@ -1000,9 +1045,13 @@
       const rel=r.distance-distance;
       const z=PLAYER_Z-rel/2.5;
 
-      r.mesh.position.x=r.lane;
+      const rivalWorldPos=distance+Math.max(0,-z);
+      const roadX=trackCurve(rivalWorldPos)-trackCurve(distance);
+      const roadY=trackHill(rivalWorldPos)-trackHill(distance);
+
+      r.mesh.position.x=r.lane+roadX;
       r.mesh.position.z=z;
-      r.mesh.position.y=0;
+      r.mesh.position.y=roadY*.28;
       r.mesh.visible=z>-85&&z<52;
 
       const steerDelta=r.targetLane-r.lane;
@@ -1025,22 +1074,23 @@
   }
 
   function updateCamera(dt,nitroActive,drifting) {
-    const camTargetX=playerCar.position.x*.42;
-    camera.position.x+=(camTargetX-camera.position.x)*Math.min(1,dt*5.2);
-    camera.position.y=7.15+speed/205+jumpY*.36;
-    camera.position.z=18.2+jumpY*.28;
+    const nextCurve=trackCurve(distance+120)-trackCurve(distance);
+    const camTargetX=playerCar.position.x*.36-nextCurve*.16;
+    camera.position.x+=(camTargetX-camera.position.x)*Math.min(1,dt*5.5);
+    camera.position.y=5.75+speed/255+jumpY*.30;
+    camera.position.z=16.0+jumpY*.22;
 
-    const desiredFov=nitroActive?78:(drifting?69:62);
+    const desiredFov=nitroActive?80:(drifting?72:66);
     camera.fov+=(desiredFov-camera.fov)*Math.min(1,dt*6);
     camera.updateProjectionMatrix();
 
-    const shake=nitroActive?.09:(drifting?.035:0);
+    const shake=nitroActive?.08:(drifting?.025:0);
     camera.position.x+=(Math.random()-.5)*shake;
     camera.position.y+=(Math.random()-.5)*shake;
 
-    camera.lookAt(playerCar.position.x*.28,1.3+jumpY*.18,-22);
+    camera.lookAt(playerCar.position.x*.20-nextCurve*.24,1.15+jumpY*.15,-30);
 
-    renderer.toneMappingExposure=nitroActive?.98:.9;
+    renderer.toneMappingExposure=nitroActive?1.05:.98;
   }
 
   function update(dt) {
@@ -1053,7 +1103,6 @@
 
     const state=updatePlayer(dt);
     updateWorld(dt);
-    updateRamps(dt);
     updateRivals(dt);
     updateEffects(dt,state.drifting,state.nitroActive);
     updateCamera(dt,state.nitroActive,state.drifting);
@@ -1104,6 +1153,7 @@
 
   addRoad();
   addScenery();
+  addRetroHorizon();
   addSpeedStreaks();
 
   playerCar=makeCar(0xff304e,1.02);
