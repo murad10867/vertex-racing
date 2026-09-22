@@ -382,7 +382,7 @@
           '<div class="stats">'+
             '<span>صعوبة '+item.difficulty+'/4</span>'+
             '<span>منعطفات '+Math.round(item.curve*100)+'%</span>'+
-            '<span>عقبات '+(5-item.difficulty)+'</span>'+
+            '<span>كثافة عقبات '+item.difficulty+'/4</span>'+
           '</div>'+
           '<p>'+item.desc+'</p>';
       }
@@ -1187,7 +1187,7 @@
       const hill=trackHill(worldPos)-trackHill(distance);
       seg.position.x=curve;
       seg.position.y=hill*.28;
-      seg.rotation.y=(trackCurve(worldPos+8)-curve)*.0042;
+      seg.rotation.y=(trackCurve(worldPos+8)-trackCurve(worldPos))*.0042;
     });
 
     scenery.forEach(s=>{
