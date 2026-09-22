@@ -8,10 +8,10 @@
   <meta name="theme-color" content="#071018">
   <meta name="description" content="Vertex Racing Nitro Rush - سباق آركيد 3D سريع">
   <title>Vertex Racing: Nitro Rush</title>
-  <link rel="stylesheet" href="style.css?v=20260922-retrochase">
+  <link rel="stylesheet" href="style.css?v=20260922-career">
   <script src="security.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js" defer></script>
-  <script src="game.js?v=20260922-retrochase" defer></script>
+  <script src="game.js?v=20260922-career" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -23,7 +23,7 @@
     <section class="hero">
       <span>RETRO ARCADE RACING</span>
       <h1>Vertex Racing: Nitro Rush</h1>
-      <p>ستايل سباقات أركيد كلاسيكي سريع: طرق متعرجة، ألوان قوية، نيترو و50 متسابقًا.</p>
+      <p>سباقات أركيد كلاسيكية مع فلوس، سيارات قابلة للشراء، خرائط متعددة، انعطافات وعقبات تزداد صعوبة.</p>
     </section>
 
     <section class="game-layout">
@@ -32,6 +32,14 @@
         <div><span>السرعة</span><strong><span id="speed">0</span> km/h</strong></div>
         <div><span>النقاط</span><strong id="score">0</strong></div>
         <div><span>أفضل نتيجة</span><strong id="best">0</strong></div>
+        <div><span>الرصيد</span><strong><span id="coins">0</span> 🪙</strong></div>
+        <div><span>السيارة</span><strong id="currentCar">Vertex S1</strong></div>
+        <div><span>الخريطة</span><strong id="currentMap">Sunset Coast</strong></div>
+
+        <div class="shop-actions">
+          <button id="garageBtn" type="button">🚗 السيارات</button>
+          <button id="mapsBtn" type="button">🗺️ الخرائط</button>
+        </div>
 
         <div class="nitro-block">
           <span>النيترو</span>
@@ -68,6 +76,20 @@
           </div>
         </div>
       </section>
+    </section>
+
+    <section id="storeOverlay" class="store-overlay" aria-hidden="true">
+      <div class="store-modal">
+        <button id="storeClose" class="store-close" type="button">✕</button>
+        <div class="store-head">
+          <div>
+            <span>VERTEX GARAGE</span>
+            <h2 id="storeTitle">السيارات</h2>
+          </div>
+          <strong><span id="storeCoins">0</span> 🪙</strong>
+        </div>
+        <div id="storeGrid" class="store-grid"></div>
+      </div>
     </section>
 
     <section class="mobile-controls">
