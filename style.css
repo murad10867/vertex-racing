@@ -1125,3 +1125,39 @@ footer{
     padding:16px
   }
 }
+
+
+/* Real Three.js garage thumbnails */
+.car-preview-3d{
+  height:180px;
+  display:grid;
+  place-items:center;
+  background-color:#0a0d12;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-size:cover;
+  overflow:hidden;
+  position:relative;
+}
+.car-preview-3d::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.025),transparent 45%,rgba(0,0,0,.16));
+}
+.preview-3d-label{
+  position:relative;
+  z-index:2;
+  padding:7px 11px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.38);
+  color:#aeb8c2;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1px;
+}
+.car-preview-3d.ready .preview-3d-label{
+  opacity:0;
+}
