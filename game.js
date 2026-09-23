@@ -597,6 +597,120 @@
     return g;
   }
 
+  let garagePreviewRenderer=null;
+  let garagePreviewScene=null;
+  let garagePreviewCamera=null;
+  let garagePreviewCar=null;
+  let garagePreviewObserver=null;
+
+  function initGaragePreview3D(){
+    if(garagePreviewRenderer) return;
+
+    garagePreviewRenderer=new THREE.WebGLRenderer({
+      antialias:true,
+      alpha:false,
+      preserveDrawingBuffer:true
+    });
+    garagePreviewRenderer.setPixelRatio(1);
+    garagePreviewRenderer.setSize(360,180,false);
+    garagePreviewRenderer.outputEncoding=THREE.sRGBEncoding;
+    garagePreviewRenderer.toneMapping=THREE.ACESFilmicToneMapping;
+    garagePreviewRenderer.toneMappingExposure=1.08;
+
+    garagePreviewScene=new THREE.Scene();
+    garagePreviewScene.background=new THREE.Color(0x0a0d12);
+
+    const hemiLight=new THREE.HemisphereLight(0xd9eeff,0x20262c,1.25);
+    garagePreviewScene.add(hemiLight);
+
+    const keyLight=new THREE.DirectionalLight(0xffffff,2.1);
+    keyLight.position.set(6,8,-5);
+    garagePreviewScene.add(keyLight);
+
+    const fillLight=new THREE.DirectionalLight(0x6bb9ff,.75);
+    fillLight.position.set(-6,3,4);
+    garagePreviewScene.add(fillLight);
+
+    const platform=new THREE.Mesh(
+      new THREE.CylinderGeometry(4.8,4.8,.18,64),
+      new THREE.MeshStandardMaterial({
+        color:0x242931,
+        roughness:.72,
+        metalness:.12
+      })
+    );
+    platform.position.y=-.02;
+    garagePreviewScene.add(platform);
+
+    const ring=new THREE.Mesh(
+      new THREE.TorusGeometry(4.15,.055,8,64),
+      new THREE.MeshBasicMaterial({color:0xa7b2be})
+    );
+    ring.rotation.x=Math.PI/2;
+    ring.position.y=.09;
+    garagePreviewScene.add(ring);
+
+    garagePreviewCamera=new THREE.PerspectiveCamera(37,2,.1,50);
+    garagePreviewCamera.position.set(6.8,3.25,-7.8);
+    garagePreviewCamera.lookAt(0,1.03,0);
+  }
+
+  function disposeGaragePreviewCar(){
+    if(!garagePreviewCar) return;
+    garagePreviewScene.remove(garagePreviewCar);
+    garagePreviewCar.traverse(obj=>{
+      if(obj.geometry&&obj.geometry.dispose) obj.geometry.dispose();
+      if(obj.material){
+        const materials=Array.isArray(obj.material)?obj.material:[obj.material];
+        materials.forEach(m=>{ if(m&&m.dispose) m.dispose(); });
+      }
+    });
+    garagePreviewCar=null;
+  }
+
+  function renderGarageCar3D(item,node){
+    initGaragePreview3D();
+    disposeGaragePreviewCar();
+
+    garagePreviewCar=makeCar(item.color,1.0,item.shape||0);
+    garagePreviewCar.rotation.y=-.13;
+    garagePreviewCar.position.y=.03;
+    garagePreviewScene.add(garagePreviewCar);
+
+    garagePreviewRenderer.render(garagePreviewScene,garagePreviewCamera);
+    node.style.backgroundImage='url("'+garagePreviewRenderer.domElement.toDataURL('image/jpeg',.86)+'")';
+    node.classList.add('ready');
+    node.dataset.loaded='1';
+  }
+
+  function setupGarage3DPreviews(){
+    if(garagePreviewObserver){
+      garagePreviewObserver.disconnect();
+      garagePreviewObserver=null;
+    }
+
+    const nodes=[...storeGrid.querySelectorAll('.car-preview-3d')];
+    const loadNode=node=>{
+      if(node.dataset.loaded==='1') return;
+      const item=CAR_CONFIGS.find(car=>car.id===node.dataset.carId);
+      if(item) renderGarageCar3D(item,node);
+    };
+
+    if('IntersectionObserver' in window){
+      garagePreviewObserver=new IntersectionObserver(entries=>{
+        entries.forEach(entry=>{
+          if(!entry.isIntersecting) return;
+          loadNode(entry.target);
+          garagePreviewObserver.unobserve(entry.target);
+        });
+      },{rootMargin:'180px 0px'});
+
+      nodes.forEach(node=>garagePreviewObserver.observe(node));
+    }else{
+      nodes.forEach(loadNode);
+    }
+  }
+
   function rebuildPlayerCar(){
     const old=playerCar;
     const pos=old?old.position.clone():new THREE.Vector3(0,0,PLAYER_Z);
@@ -678,34 +792,9 @@
       const canBuy=coins>=item.cost;
 
       if(isCar){
-        const shape=item.shape||0;
-        const previewColor='#'+item.color.toString(16).padStart(6,'0');
-        const previewWidth=146+(shape%10)*3;
-        const previewHeight=40+(shape%5)*2;
-        const previewCabin=66+(Math.floor(shape/10)%10)*2;
-        const previewSpoiler=78+(Math.floor(shape/10)%5)*8;
-        const previewWheel=27+(shape%4)*2;
-        const previewStyle=
-          '--car-color:'+previewColor+
-          ';--preview-width:'+previewWidth+'px'+
-          ';--preview-height:'+previewHeight+'px'+
-          ';--preview-cabin:'+previewCabin+'px'+
-          ';--preview-spoiler:'+previewSpoiler+'px'+
-          ';--preview-wheel:'+previewWheel+'px';
-
         card.innerHTML=
-          '<div class="car-preview car-preview-'+item.id+'" style="'+previewStyle+'" aria-hidden="true">'+
-            '<div class="preview-floor"></div>'+
-            '<div class="preview-car">'+
-              '<i class="preview-spoiler"></i>'+
-              '<i class="preview-body"></i>'+
-              '<i class="preview-glass"></i>'+
-              '<i class="preview-hood"></i>'+
-              '<i class="preview-wheel wheel-left"></i>'+
-              '<i class="preview-wheel wheel-right"></i>'+
-              '<i class="preview-light light-left"></i>'+
-              '<i class="preview-light light-right"></i>'+
-            '</div>'+
+          '<div class="car-preview car-preview-3d" data-car-id="'+item.id+'" aria-label="معاينة ثلاثية الأبعاد">'+
+            '<span class="preview-3d-label">3D</span>'+
           '</div>'+
           '<h3>'+item.name+'</h3>'+
           '<div class="stats">'+
@@ -736,6 +825,7 @@
     });
 
     updateCareerUI();
+    if(isCar) requestAnimationFrame(setupGarage3DPreviews);
   }
 
   function openStore(type){
