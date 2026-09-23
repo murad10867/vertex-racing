@@ -98,12 +98,53 @@
     });
   }
 
-  const MAP_CONFIGS = [
+  const BASE_MAPS = [
     {id:'coast',name:'Sunset Coast',cost:0,difficulty:1,curve:.72,hill:.55,obstacleEvery:9999,aiBoost:0,sky:0x63c9ff,fog:0xb7e7ff,desc:'منعطفات واسعة وسريعة.'},
     {id:'neon',name:'Neon City',cost:900,difficulty:2,curve:1.00,hill:.72,obstacleEvery:9999,aiBoost:7,sky:0x384a88,fog:0x6c79a7,desc:'منعطفات أسرع داخل المدينة.'},
     {id:'alpine',name:'Alpine Rush',cost:2200,difficulty:3,curve:1.28,hill:1.05,obstacleEvery:9999,aiBoost:13,sky:0xa7d8ef,fog:0xd8ecf2,desc:'مرتفعات ومنعطفات حادة.'},
-    {id:'volcano',name:'Volcano Pass',cost:4500,difficulty:4,curve:1.55,hill:1.35,obstacleEvery:9999,aiBoost:20,sky:0xd76938,fog:0x6e3a31,desc:'أصعب خريطة: منعطفات قوية وسرعات أعلى.'}
+    {id:'volcano',name:'Volcano Pass',cost:4500,difficulty:4,curve:1.55,hill:1.35,obstacleEvery:9999,aiBoost:20,sky:0xd76938,fog:0x6e3a31,desc:'منعطفات قوية وسرعات أعلى.'}
   ];
+
+  const MAP_THEMES = [
+    {name:'Desert Run',sky:0xe6b96b,fog:0xe8cfa0,curve:.82,hill:.48,desc:'طريق صحراوي سريع ومنعطفاته طويلة.'},
+    {name:'Moonlight Bay',sky:0x243b6b,fog:0x596b8b,curve:1.02,hill:.64,desc:'سباق ليلي على طريق ساحلي.'},
+    {name:'Emerald Hills',sky:0x84c9c0,fog:0xb9ddd3,curve:1.12,hill:1.12,desc:'مرتفعات خضراء ومنعطفات متغيرة.'},
+    {name:'Golden Canyon',sky:0xe09354,fog:0xc99572,curve:1.28,hill:.92,desc:'طريق وادٍ سريع بمنعطفات ضيقة.'},
+    {name:'Midnight Run',sky:0x18203c,fog:0x444b68,curve:1.34,hill:.58,desc:'مدينة ليلية وسرعات عالية.'},
+    {name:'Arctic Road',sky:0xbcdff1,fog:0xe3f1f7,curve:1.06,hill:1.28,desc:'طريق بارد مليء بالمرتفعات.'},
+    {name:'Thunder Valley',sky:0x59626c,fog:0x87909a,curve:1.48,hill:1.18,desc:'منعطفات قوية وسط وادٍ مظلم.'},
+    {name:'Sakura Route',sky:0xf2b8c9,fog:0xf6d5de,curve:.94,hill:.78,desc:'مسار هادئ يتحول لسباق سريع.'},
+    {name:'Cyber District',sky:0x35256d,fog:0x66549b,curve:1.56,hill:.70,desc:'منعطفات حادة داخل منطقة مستقبلية.'},
+    {name:'Red Dunes',sky:0xc85b3a,fog:0x9d5748,curve:1.18,hill:.86,desc:'كثبان حمراء وطريق سريع متعرج.'},
+    {name:'Sky Ridge',sky:0x6fb7dd,fog:0xb7d8e9,curve:1.40,hill:1.42,desc:'قمم مرتفعة وانحدارات سريعة.'},
+    {name:'Storm Coast',sky:0x536b78,fog:0x879aa3,curve:1.32,hill:.98,desc:'ساحل عاصف ومنعطفات متتابعة.'},
+    {name:'Crystal Highway',sky:0x83d7e6,fog:0xc8edf3,curve:.88,hill:.62,desc:'طريق سريع مناسب للسرعات القصوى.'},
+    {name:'Black Mountain',sky:0x45474f,fog:0x70727a,curve:1.62,hill:1.55,desc:'مسار جبلي شديد الصعوبة.'},
+    {name:'Solar Plains',sky:0xf5c65d,fog:0xe8d79b,curve:.78,hill:.52,desc:'سهول مفتوحة وسباق سرعة.'},
+    {name:'Violet Circuit',sky:0x6d4ba8,fog:0x9b83c1,curve:1.46,hill:.82,desc:'حلبة بنفسجية بمنعطفات سريعة.'}
+  ];
+
+  const MAP_CONFIGS = [...BASE_MAPS];
+  for(let i=4;i<100;i++){
+    const n=i+1;
+    const theme=MAP_THEMES[(i-4)%MAP_THEMES.length];
+    const tier=Math.min(10,1+Math.floor(i/10));
+    const variation=((i*7)%13)/100;
+
+    MAP_CONFIGS.push({
+      id:'map-'+String(n).padStart(3,'0'),
+      name:theme.name+' '+String(n).padStart(3,'0'),
+      cost:5600+(i-4)*700+tier*180,
+      difficulty:tier,
+      curve:Math.min(1.85,theme.curve+variation+tier*.025),
+      hill:Math.min(1.72,theme.hill+((i*3)%9)/100+tier*.018),
+      obstacleEvery:9999,
+      aiBoost:Math.min(45,5+tier*3+Math.floor(i/12)),
+      sky:theme.sky,
+      fog:theme.fog,
+      desc:theme.desc
+    });
+  }
 
   let coins=Number(localStorage.getItem('vertexRacingCoins')||0);
   let ownedCars=JSON.parse(localStorage.getItem('vertexRacingOwnedCars')||'["s1"]');
@@ -495,7 +536,7 @@
     const m=mapConfig();
     scene.background=new THREE.Color(m.sky);
     scene.fog.color.setHex(m.fog);
-    renderer.toneMappingExposure=m.difficulty>=4?.86:(m.difficulty===2?.93:.98);
+    renderer.toneMappingExposure=THREE.MathUtils.clamp(1.01-m.difficulty*.018,.82,.99);
     currentMapEl.textContent=m.name;
   }
 
@@ -594,7 +635,7 @@
         card.innerHTML=
           '<h3>'+item.name+'</h3>'+
           '<div class="stats">'+
-            '<span>صعوبة '+item.difficulty+'/4</span>'+
+            '<span>صعوبة '+item.difficulty+'/10</span>'+
             '<span>منعطفات '+Math.round(item.curve*100)+'%</span>'+
             '<span>تحدي '+item.difficulty+'/4</span>'+
           '</div>'+
