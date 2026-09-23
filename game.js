@@ -310,146 +310,173 @@
   }
 
   function makeCar(color, scale = 1, variant = 0) {
-    const g = new THREE.Group();
+    const g=new THREE.Group();
     variant=Math.max(0,Math.floor(variant||0));
 
     const bodyFamily=variant%10;
     const aeroFamily=Math.floor(variant/10)%10;
 
-    const bodyW=3.34+bodyFamily*.058+(aeroFamily%3)*.055;
-    const bodyL=5.92+aeroFamily*.125+(bodyFamily%2)*.17;
-    const bodyH=.68+(bodyFamily%5)*.055;
-    const hoodL=1.50+(aeroFamily%5)*.15;
-    const cabinW=bodyW*(.67+(aeroFamily%4)*.035);
-    const cabinH=.90+(bodyFamily%4)*.095;
-    const cabinL=2.30+(aeroFamily%6)*.125;
-    const cabinZ=-.22+((bodyFamily%5)-2)*.105;
-    const wheelR=.48+(bodyFamily%4)*.035;
-    const wheelX=bodyW/2+.02;
-    const wheelFront=-bodyL*.285;
+    // Low, wide sports-car proportions inspired by the reference shape.
+    const bodyW=3.55+bodyFamily*.035;
+    const bodyL=6.45+aeroFamily*.07+(bodyFamily%2)*.08;
+    const wheelR=.56+(bodyFamily%3)*.025;
+    const wheelX=bodyW*.49;
+    const wheelFront=-bodyL*.30;
     const wheelRear=bodyL*.29;
-    const wingW=Math.max(2.15,bodyW*(.68+(aeroFamily%4)*.075));
-    const wingY=1.72+bodyH*.25+(aeroFamily%4)*.09;
 
-    const bodyMat = new THREE.MeshStandardMaterial({
+    const cabinW=2.45+(bodyFamily%4)*.055;
+    const cabinL=2.65+(aeroFamily%4)*.08;
+    const cabinH=.61+(bodyFamily%3)*.035;
+    const cabinZ=.05+((bodyFamily%5)-2)*.045;
+
+    const bodyMat=new THREE.MeshStandardMaterial({
       color,
-      roughness: .27+(bodyFamily%3)*.035,
-      metalness: .25+(aeroFamily%4)*.035
+      roughness:.22+(bodyFamily%3)*.025,
+      metalness:.34+(aeroFamily%3)*.03
     });
-    const glassMat = new THREE.MeshStandardMaterial({
-      color: 0x153c52,
-      roughness: .13,
-      metalness: .25,
-      transparent: true,
-      opacity: .9
+    const glassMat=new THREE.MeshStandardMaterial({
+      color:0x102f42,
+      roughness:.08,
+      metalness:.30,
+      transparent:true,
+      opacity:.90
     });
-    const darkMat = new THREE.MeshStandardMaterial({
-      color: 0x0d1217,
-      roughness: .55,
-      metalness: .32
+    const darkMat=new THREE.MeshStandardMaterial({
+      color:0x101419,
+      roughness:.48,
+      metalness:.42
     });
-    const tireMat = new THREE.MeshStandardMaterial({
-      color: 0x050607,
-      roughness: .95
+    const tireMat=new THREE.MeshStandardMaterial({
+      color:0x050607,
+      roughness:.94
     });
-    const rimMat = new THREE.MeshStandardMaterial({
-      color: (variant%5===0?0xffd36a:0xc4d0d8),
-      roughness: .2,
-      metalness: .78
+    const rimMat=new THREE.MeshStandardMaterial({
+      color:variant%6===0?0xdce5ec:0xbcc7cf,
+      roughness:.16,
+      metalness:.86
     });
-    const redMat = new THREE.MeshStandardMaterial({
-      color: 0xff2846,
-      emissive: 0x650009
+    const redMat=new THREE.MeshStandardMaterial({
+      color:0xff253f,
+      emissive:0x5f0009,
+      emissiveIntensity:.65
+    });
+    const headlightMat=new THREE.MeshStandardMaterial({
+      color:0xf8fdff,
+      emissive:0xd9f5ff,
+      emissiveIntensity:1.25,
+      roughness:.10
     });
 
-    const lower = new THREE.Mesh(new THREE.BoxGeometry(bodyW, bodyH, bodyL), bodyMat);
-    lower.position.y = .93+bodyH*.09;
-    lower.castShadow = true;
-    g.add(lower);
-
-    // Nose shape changes from compact/wedge to long GT.
-    const hood = new THREE.Mesh(
-      new THREE.BoxGeometry(bodyW*.88, .30+(bodyFamily%4)*.055, hoodL),
+    // Flat chassis keeps the car planted and low.
+    const chassis=new THREE.Mesh(
+      new THREE.BoxGeometry(bodyW*.96,.42,bodyL*.91),
       bodyMat
     );
-    hood.position.set(0,1.36+bodyH*.16,-bodyL/2+hoodL*.53);
-    hood.rotation.x=-(aeroFamily%3)*.012;
+    chassis.position.y=.82;
+    chassis.castShadow=true;
+    g.add(chassis);
+
+    // Rounded main shell gives the car the smooth sports-car silhouette.
+    const shell=new THREE.Mesh(
+      new THREE.SphereGeometry(1,28,14),
+      bodyMat
+    );
+    shell.scale.set(bodyW*.53,.50+(bodyFamily%4)*.018,bodyL*.50);
+    shell.position.set(0,1.03,.02);
+    shell.castShadow=true;
+    g.add(shell);
+
+    // Long, low hood like the reference car.
+    const hood=new THREE.Mesh(
+      new THREE.SphereGeometry(1,24,12),
+      bodyMat
+    );
+    hood.scale.set(bodyW*.49,.31+(aeroFamily%3)*.018,bodyL*.285);
+    hood.position.set(0,1.22,-bodyL*.285);
     hood.castShadow=true;
     g.add(hood);
 
-    // Side skirts vary on every body family.
-    const skirtGeo=new THREE.BoxGeometry(.24+(bodyFamily%3)*.045,.22+(aeroFamily%3)*.04,bodyL*.69);
-    [-1,1].forEach(side=>{
-      const skirt=new THREE.Mesh(skirtGeo,darkMat);
-      skirt.position.set(side*(bodyW/2+.07),.72,.12);
-      skirt.castShadow=true;
-      g.add(skirt);
-    });
+    // Rear deck gives a muscular tail.
+    const rearDeck=new THREE.Mesh(
+      new THREE.BoxGeometry(bodyW*.88,.24,1.42+(aeroFamily%3)*.08),
+      bodyMat
+    );
+    rearDeck.position.set(0,1.30,bodyL*.33);
+    rearDeck.castShadow=true;
+    g.add(rearDeck);
 
-    const cabin = new THREE.Mesh(new THREE.BoxGeometry(cabinW,cabinH,cabinL),glassMat);
-    cabin.position.set(0,1.70+bodyH*.27,cabinZ);
-    cabin.rotation.x=((bodyFamily%3)-1)*.018;
+    // Bubble-style dark cabin/windscreen.
+    const cabin=new THREE.Mesh(
+      new THREE.SphereGeometry(1,28,14),
+      glassMat
+    );
+    cabin.scale.set(cabinW*.56,cabinH,cabinL*.55);
+    cabin.position.set(0,1.67,cabinZ);
+    cabin.rotation.x=-.035;
     cabin.castShadow=true;
     g.add(cabin);
 
-    const roof = new THREE.Mesh(
-      new THREE.BoxGeometry(cabinW*.94,.13+(aeroFamily%3)*.025,cabinL*.78),
+    // Body-colored roof spine makes the canopy feel integrated.
+    const roofSpine=new THREE.Mesh(
+      new THREE.BoxGeometry(.26,.10,cabinL*.72),
+      bodyMat
+    );
+    roofSpine.position.set(0,2.23,cabinZ+.04);
+    g.add(roofSpine);
+
+    // Side intakes / sculpting.
+    [-1,1].forEach(side=>{
+      const intake=new THREE.Mesh(
+        new THREE.BoxGeometry(.10,.36,1.18+(bodyFamily%3)*.10),
+        darkMat
+      );
+      intake.position.set(side*(bodyW*.505),1.06,.58);
+      intake.rotation.z=side*.045;
+      g.add(intake);
+
+      const sill=new THREE.Mesh(
+        new THREE.BoxGeometry(.16,.16,bodyL*.56),
+        darkMat
+      );
+      sill.position.set(side*(bodyW*.505),.68,.18);
+      g.add(sill);
+    });
+
+    // Front splitter.
+    const splitter=new THREE.Mesh(
+      new THREE.BoxGeometry(bodyW*.88,.10,.42),
       darkMat
     );
-    roof.position.set(0,cabin.position.y+cabinH*.54,cabinZ+.02);
-    g.add(roof);
+    splitter.position.set(0,.68,-bodyL*.49);
+    g.add(splitter);
 
-    // Different hood vents make close variants visually distinct.
-    const ventCount=1+(variant%3);
-    for(let i=0;i<ventCount;i++){
-      const vent=new THREE.Mesh(
-        new THREE.BoxGeometry(.22+(aeroFamily%4)*.05,.055,.62+(bodyFamily%3)*.12),
+    // Rear spoiler similar to the reference car, with subtle variant changes.
+    const wingW=2.78+(aeroFamily%5)*.11;
+    const wingY=1.72+(aeroFamily%4)*.065;
+    const spoiler=new THREE.Mesh(
+      new THREE.BoxGeometry(wingW,.12,.38+(bodyFamily%3)*.035),
+      darkMat
+    );
+    spoiler.position.set(0,wingY,bodyL*.475);
+    spoiler.rotation.x=-.025;
+    g.add(spoiler);
+
+    const wingLegH=.38+(aeroFamily%4)*.05;
+    [-wingW*.32,wingW*.32].forEach(x=>{
+      const leg=new THREE.Mesh(
+        new THREE.BoxGeometry(.11,wingLegH,.12),
         darkMat
       );
-      const spread=.42;
-      vent.position.set((i-(ventCount-1)/2)*spread,hood.position.y+.18,hood.position.z-.05);
-      g.add(vent);
-    }
+      leg.position.set(x,wingY-wingLegH*.5-.04,bodyL*.455);
+      g.add(leg);
+    });
 
-    // Ten aero families: lip, medium wing, tall wing, split wing and fin combinations.
-    if(aeroFamily%5===0){
-      const lip=new THREE.Mesh(new THREE.BoxGeometry(bodyW*.72,.12,.30),darkMat);
-      lip.position.set(0,1.26,bodyL/2-.04);
-      g.add(lip);
-    }else{
-      const spoiler = new THREE.Mesh(
-        new THREE.BoxGeometry(wingW,.11+(aeroFamily%3)*.035,.28+(bodyFamily%3)*.05),
-        darkMat
-      );
-      spoiler.position.set(0,wingY,bodyL/2-.18);
-      spoiler.rotation.z=((bodyFamily%3)-1)*.018;
-      g.add(spoiler);
-
-      const legHeight=.28+(aeroFamily%5)*.07;
-      [-wingW*.32,wingW*.32].forEach(x=>{
-        const leg=new THREE.Mesh(new THREE.BoxGeometry(.11,legHeight,.11),darkMat);
-        leg.position.set(x,wingY-legHeight*.5-.03,bodyL/2-.23);
-        g.add(leg);
-      });
-    }
-
-    if(variant%4===0){
-      const splitter=new THREE.Mesh(new THREE.BoxGeometry(bodyW*.95,.10,.42),darkMat);
-      splitter.position.set(0,.69,-bodyL/2-.08);
-      g.add(splitter);
-    }
-
-    if(variant%7===0){
-      const fin=new THREE.Mesh(new THREE.BoxGeometry(.10,.38,1.05),darkMat);
-      fin.position.set(0,roof.position.y+.18,roof.position.z+.18);
-      g.add(fin);
-    }
-
-    const wheelGeo = new THREE.CylinderGeometry(wheelR,wheelR,.42+(aeroFamily%3)*.04,16);
-    const rimGeo = new THREE.CylinderGeometry(wheelR*.50,wheelR*.50,.45+(aeroFamily%3)*.04,16);
-    const wheels = [
-      [-wheelX,.61,wheelFront],[wheelX,.61,wheelFront],
-      [-wheelX,.61,wheelRear],[wheelX,.61,wheelRear]
+    // Larger sports wheels and metallic rims.
+    const wheelGeo=new THREE.CylinderGeometry(wheelR,wheelR,.46,20);
+    const rimGeo=new THREE.CylinderGeometry(wheelR*.55,wheelR*.55,.49,20);
+    const wheels=[
+      [-wheelX,.60,wheelFront],[wheelX,.60,wheelFront],
+      [-wheelX,.60,wheelRear],[wheelX,.60,wheelRear]
     ];
 
     const wheelMeshes=[];
@@ -465,45 +492,101 @@
       rim.rotation.z=Math.PI/2;
       rim.position.set(x,y,z);
       g.add(rim);
+
+      const hub=new THREE.Mesh(
+        new THREE.CylinderGeometry(wheelR*.15,wheelR*.15,.51,16),
+        darkMat
+      );
+      hub.rotation.z=Math.PI/2;
+      hub.position.set(x,y,z);
+      g.add(hub);
     });
 
-    const lampW=.58+(bodyFamily%3)*.08;
+    // Slim front lamps.
     [-bodyW*.30,bodyW*.30].forEach(x=>{
-      const tail=new THREE.Mesh(new THREE.BoxGeometry(lampW,.20,.13),redMat);
-      tail.position.set(x,1.15,bodyL/2+.02);
-      g.add(tail);
-    });
-
-    const headlightMat=new THREE.MeshBasicMaterial({color:0xf3fbff});
-    [-bodyW*.30,bodyW*.30].forEach(x=>{
-      const lamp=new THREE.Mesh(new THREE.BoxGeometry(lampW,.18,.12),headlightMat);
-      lamp.position.set(x,1.14,-bodyL/2-.02);
+      const lamp=new THREE.Mesh(
+        new THREE.SphereGeometry(.22,14,8),
+        headlightMat
+      );
+      lamp.scale.set(1.35,.58,.42);
+      lamp.position.set(x,1.20,-bodyL*.482);
       g.add(lamp);
     });
 
+    // Rear lights.
+    [-bodyW*.31,bodyW*.31].forEach(x=>{
+      const tail=new THREE.Mesh(
+        new THREE.BoxGeometry(.76,.20,.12),
+        redMat
+      );
+      tail.position.set(x,1.12,bodyL*.487);
+      g.add(tail);
+    });
+
     const diffuser=new THREE.Mesh(
-      new THREE.BoxGeometry(bodyW*.67,.16,.25),
-      new THREE.MeshStandardMaterial({color:0x151a20,roughness:.38,metalness:.55})
+      new THREE.BoxGeometry(bodyW*.64,.15,.30),
+      darkMat
     );
-    diffuser.position.set(0,.68,bodyL/2+.04);
+    diffuser.position.set(0,.68,bodyL*.49);
     g.add(diffuser);
 
+    // Twin exhausts + nitro flames.
+    const exhaustMat=new THREE.MeshStandardMaterial({
+      color:0x8d979f,
+      roughness:.24,
+      metalness:.86
+    });
     const flameMat=new THREE.MeshBasicMaterial({
       color:0x42dcff,
       transparent:true,
       opacity:.86
     });
-
     const flames=[];
-    const exhaustSpread=Math.min(1.0,bodyW*.23);
-    [-exhaustSpread,exhaustSpread].forEach(x=>{
-      const flame=new THREE.Mesh(new THREE.ConeGeometry(.18,1.18,10),flameMat);
+    [-.74,.74].forEach(x=>{
+      const exhaust=new THREE.Mesh(
+        new THREE.CylinderGeometry(.13,.15,.34,12),
+        exhaustMat
+      );
+      exhaust.rotation.x=Math.PI/2;
+      exhaust.position.set(x,.78,bodyL*.515);
+      g.add(exhaust);
+
+      const flame=new THREE.Mesh(
+        new THREE.ConeGeometry(.18,1.16,10),
+        flameMat
+      );
       flame.rotation.x=Math.PI/2;
-      flame.position.set(x,.80,bodyL/2+.55);
+      flame.position.set(x,.78,bodyL*.59);
       flame.visible=false;
       g.add(flame);
       flames.push(flame);
     });
+
+    // A few subtle family differences keep all 100 cars unique.
+    if(variant%3===0){
+      const stripe=new THREE.Mesh(
+        new THREE.BoxGeometry(.18,.055,bodyL*.56),
+        new THREE.MeshStandardMaterial({color:0xf2f4f6,roughness:.25,metalness:.20})
+      );
+      stripe.position.set(0,1.49,-.50);
+      g.add(stripe);
+    }
+    if(variant%5===0){
+      const ventGeo=new THREE.BoxGeometry(.20,.05,.72);
+      [-.42,.42].forEach(x=>{
+        const vent=new THREE.Mesh(ventGeo,darkMat);
+        vent.position.set(x,1.51,-bodyL*.27);
+        g.add(vent);
+      });
+    }
+    if(variant%7===0){
+      const roofFin=new THREE.Mesh(
+        new THREE.BoxGeometry(.08,.24,.72),
+        darkMat
+      );
+      roofFin.position.set(0,2.29,.25);
+      g.add(roofFin);
+    }
 
     g.scale.setScalar(scale);
     g.userData.halfW=(bodyW/2)*scale;
