@@ -1563,7 +1563,7 @@
     // The player still controls lane changes, but the car body points into each bend.
     const curveLookAhead=34+speed*.08;
     const curveDelta=trackCurve(distance+curveLookAhead)-trackCurve(distance);
-    const roadYaw=-Math.atan2(curveDelta,curveLookAhead)*1.55;
+    const roadYaw=Math.atan2(curveDelta,curveLookAhead)*1.55;
 
     playerCar.rotation.z=-steerVisual-roadYaw*.11;
     playerCar.rotation.y=roadYaw-(drifting?steerVisual*1.65:steerVisual*.72);
@@ -1772,7 +1772,7 @@
       const rivalLookAhead=34;
       const rivalCurveDelta=
         trackCurve(rivalWorldPos+rivalLookAhead)-trackCurve(rivalWorldPos);
-      const rivalRoadYaw=-Math.atan2(rivalCurveDelta,rivalLookAhead)*1.55;
+      const rivalRoadYaw=Math.atan2(rivalCurveDelta,rivalLookAhead)*1.55;
 
       r.mesh.rotation.y=rivalRoadYaw-steerDelta*.035;
       r.mesh.rotation.z=-steerDelta*.018-rivalRoadYaw*.08;
