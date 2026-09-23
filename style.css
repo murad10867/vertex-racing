@@ -760,11 +760,12 @@ footer{
 .preview-body{
   position:absolute;
 
-  left:18px;
-  right:18px;
+  left:50%;
   bottom:8px;
 
-  height:46px;
+  width:var(--preview-width,154px);
+  height:var(--preview-height,46px);
+  transform:translateX(-50%);
 
   border-radius:
     18px
@@ -811,10 +812,10 @@ footer{
 .preview-glass{
   position:absolute;
 
-  left:48px;
-  right:48px;
+  left:50%;
   top:6px;
 
+  width:var(--preview-cabin,94px);
   height:31px;
 
   border-radius:
@@ -834,6 +835,7 @@ footer{
     2px solid rgba(255,255,255,.15);
 
   transform:
+    translateX(-50%)
     perspective(80px)
     rotateX(-8deg)
 }
@@ -874,8 +876,8 @@ footer{
 .preview-spoiler{
   position:absolute;
 
-  left:42px;
-  right:42px;
+  left:50%;
+  width:var(--preview-spoiler,106px);
 
   top:2px;
 
@@ -918,6 +920,7 @@ footer{
     rgba(0,0,0,.32);
 
   transform:
+    translateX(-50%)
     perspective(80px)
     rotateX(5deg);
 
@@ -984,8 +987,8 @@ footer{
 
   bottom:0;
 
-  width:31px;
-  height:31px;
+  width:var(--preview-wheel,31px);
+  height:var(--preview-wheel,31px);
 
   border-radius:50%;
 
