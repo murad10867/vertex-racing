@@ -1559,14 +1559,9 @@
     const desiredSteer=steer*(drifting?.35:.17);
     steerVisual+=(desiredSteer-steerVisual)*Math.min(1,dt*(drifting?6:10));
 
-    // Follow the road direction automatically on curves.
-    // The player still controls lane changes, but the car body points into each bend.
-    const curveLookAhead=34+speed*.08;
-    const curveDelta=trackCurve(distance+curveLookAhead)-trackCurve(distance);
-    const roadYaw=Math.atan2(curveDelta,curveLookAhead)*1.55;
-
-    playerCar.rotation.z=-steerVisual-roadYaw*.11;
-    playerCar.rotation.y=roadYaw-(drifting?steerVisual*1.65:steerVisual*.72);
+    // Player steering is fully manual.
+    playerCar.rotation.z=-steerVisual;
+    playerCar.rotation.y=-(drifting?steerVisual*1.65:steerVisual*.72);
 
     if(jumpY>0||jumpV>0){
       wasAirborne=true;
