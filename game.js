@@ -1558,8 +1558,15 @@
 
     const desiredSteer=steer*(drifting?.35:.17);
     steerVisual+=(desiredSteer-steerVisual)*Math.min(1,dt*(drifting?6:10));
-    playerCar.rotation.z=-steerVisual;
-    playerCar.rotation.y=-(drifting?steerVisual*1.65:steerVisual*.72);
+
+    // Follow the road direction automatically on curves.
+    // The player still controls lane changes, but the car body points into each bend.
+    const curveLookAhead=34+speed*.08;
+    const curveDelta=trackCurve(distance+curveLookAhead)-trackCurve(distance);
+    const roadYaw=-Math.atan2(curveDelta,curveLookAhead)*1.55;
+
+    playerCar.rotation.z=-steerVisual-roadYaw*.11;
+    playerCar.rotation.y=roadYaw-(drifting?steerVisual*1.65:steerVisual*.72);
 
     if(jumpY>0||jumpV>0){
       wasAirborne=true;
@@ -1762,8 +1769,13 @@
       r.mesh.visible=z>-85&&z<52;
 
       const steerDelta=r.targetLane-r.lane;
-      r.mesh.rotation.y=-steerDelta*.035;
-      r.mesh.rotation.z=-steerDelta*.018;
+      const rivalLookAhead=34;
+      const rivalCurveDelta=
+        trackCurve(rivalWorldPos+rivalLookAhead)-trackCurve(rivalWorldPos);
+      const rivalRoadYaw=-Math.atan2(rivalCurveDelta,rivalLookAhead)*1.55;
+
+      r.mesh.rotation.y=rivalRoadYaw-steerDelta*.035;
+      r.mesh.rotation.z=-steerDelta*.018-rivalRoadYaw*.08;
 
       if(r.mesh.visible&&crashCooldown<=0&&jumpY<.8){
         const dx=Math.abs(playerCar.position.x-r.mesh.position.x);
